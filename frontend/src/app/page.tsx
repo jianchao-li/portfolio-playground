@@ -204,97 +204,135 @@ export default function Home() {
         <p>Build, analyze, and compare investment portfolios</p>
       </header>
 
-      {/* Top Controls Bar - Two Row Layout */}
-      <div className="controls-bar">
-        {/* Row 1: Date Range + Selected Portfolios */}
-        <div className="controls-row-1">
-          <div className="date-inputs">
-            <div className="date-field">
-              <label>Start</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="date-field">
-              <label>End</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-            <CurrencySelector
-              value={currency}
-              onChange={setCurrency}
-              disabled={loading}
+      {/* Settings Bar */}
+      <div className="settings-bar">
+        <div className="date-inputs">
+          <div className="date-field">
+            <label>Start</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
-
-          <div className="controls-divider" />
-
-          <div className="portfolio-chips">
-            {results.map((r, index) => {
-              const color = getPortfolioColor(index);
-              return (
-                <div
-                  key={r.name}
-                  className="portfolio-chip-wrapper"
-                  onMouseEnter={() => setOpenPopover(r.name)}
-                  onMouseLeave={() => setOpenPopover(null)}
-                >
-                  <div
-                    className={`portfolio-chip clickable ${openPopover === r.name ? 'active' : ''}`}
-                    style={{ borderColor: color, color: color }}
-                  >
-                    <span>{r.name}</span>
-                  </div>
-                  {openPopover === r.name && (
-                    <PortfolioPopover
-                      name={r.name}
-                      assets={r.assets}
-                      onEdit={() => handleEditClick(r)}
-                      onRemove={() => removePortfolio(r.name)}
-                      onClose={() => setOpenPopover(null)}
-                    />
-                  )}
-                </div>
-              );
-            })}
-            {results.length === 0 && (
-              <span className="no-portfolios-hint">No portfolios selected</span>
-            )}
+          <div className="date-field">
+            <label>End</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
           </div>
+          <CurrencySelector
+            value={currency}
+            onChange={setCurrency}
+            disabled={loading}
+          />
         </div>
+      </div>
 
-        {/* Row 2: Presets + Custom Button */}
-        <div className="controls-row-2">
-          <div className="preset-chips">
-            {PRESET_PORTFOLIOS.map((preset) => {
-              const resultIndex = results.findIndex((r) => r.name === preset.name);
-              const isAdded = resultIndex !== -1;
-              const color = isAdded ? getPortfolioColor(resultIndex) : undefined;
-              return (
+      {/* Portfolio Selector */}
+      <div className="portfolio-selector">
+        {PRESET_PORTFOLIOS.map((preset) => {
+          const resultIndex = results.findIndex((r) => r.name === preset.name);
+          const isActive = resultIndex !== -1;
+          const color = isActive ? getPortfolioColor(resultIndex) : undefined;
+
+          if (isActive) {
+            const r = results[resultIndex];
+            return (
+              <div
+                key={preset.name}
+                className="portfolio-chip-wrapper"
+                onMouseEnter={() => setOpenPopover(r.name)}
+                onMouseLeave={() => setOpenPopover(null)}
+              >
                 <button
-                  key={preset.name}
-                  onClick={() => isAdded ? removePortfolio(preset.name) : addPreset(preset)}
+                  onClick={() => removePortfolio(preset.name)}
                   disabled={loading}
-                  className={`preset-chip ${isAdded ? 'added' : ''}`}
-                  style={isAdded ? { borderColor: color, color: color } : undefined}
+                  className="portfolio-chip-unified active"
+                  style={{
+                    borderColor: color,
+                    backgroundColor: `${color}15`,
+                    color: color,
+                  }}
                 >
-                  {isAdded ? '✓' : '+'} {preset.name}
+                  ✓ {preset.name}
                 </button>
-              );
-            })}
-          </div>
-          <button
-            onClick={openAddModal}
-            className="add-custom-btn"
-          >
-            + Custom
-          </button>
-        </div>
+                {openPopover === r.name && (
+                  <PortfolioPopover
+                    name={r.name}
+                    assets={r.assets}
+                    onEdit={() => handleEditClick(r)}
+                    onRemove={() => removePortfolio(r.name)}
+                    onClose={() => setOpenPopover(null)}
+                  />
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={preset.name}
+              onClick={() => addPreset(preset)}
+              disabled={loading}
+              className="portfolio-chip-unified inactive"
+            >
+              + {preset.name}
+            </button>
+          );
+        })}
+
+        {/* Custom portfolios (not matching any preset) */}
+        {results
+          .filter((r) => !PRESET_PORTFOLIOS.some((p) => p.name === r.name))
+          .map((r) => {
+            const resultIndex = results.findIndex((res) => res.name === r.name);
+            const color = getPortfolioColor(resultIndex);
+            return (
+              <div
+                key={r.name}
+                className="portfolio-chip-wrapper"
+                onMouseEnter={() => setOpenPopover(r.name)}
+                onMouseLeave={() => setOpenPopover(null)}
+              >
+                <span
+                  className="portfolio-chip-unified active"
+                  style={{
+                    borderColor: color,
+                    backgroundColor: `${color}15`,
+                    color: color,
+                  }}
+                >
+                  {r.name}
+                  <button
+                    className="chip-remove"
+                    onClick={() => removePortfolio(r.name)}
+                    style={{ color: color }}
+                  >
+                    ×
+                  </button>
+                </span>
+                {openPopover === r.name && (
+                  <PortfolioPopover
+                    name={r.name}
+                    assets={r.assets}
+                    onEdit={() => handleEditClick(r)}
+                    onRemove={() => removePortfolio(r.name)}
+                    onClose={() => setOpenPopover(null)}
+                  />
+                )}
+              </div>
+            );
+          })}
+
+        <button
+          onClick={openAddModal}
+          className="add-custom-btn"
+        >
+          + Custom
+        </button>
       </div>
 
       {/* Error Message */}
