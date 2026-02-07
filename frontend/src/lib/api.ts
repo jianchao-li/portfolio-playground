@@ -78,3 +78,43 @@ export async function comparePortfolios(
 
   return response.json();
 }
+
+export interface SymbolResult {
+  symbol: string;
+  name: string | null;
+  type: string | null;
+  exchange: string | null;
+}
+
+export class SymbolSearchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'SymbolSearchError';
+  }
+}
+
+export async function searchSymbols(query: string): Promise<SymbolResult[]> {
+  if (!query || query.length < 1) {
+    return [];
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE}/api/portfolio/symbols/search?q=${encodeURIComponent(query)}`
+    );
+  } catch (error) {
+    throw new SymbolSearchError('Network error: Unable to reach the server');
+  }
+
+  if (!response.ok) {
+    if (response.status === 504) {
+      throw new SymbolSearchError('Search timed out. Please try again.');
+    } else if (response.status >= 500) {
+      throw new SymbolSearchError('Search service is temporarily unavailable');
+    }
+    throw new SymbolSearchError('Failed to search symbols');
+  }
+
+  return response.json();
+}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Asset } from '@/lib/api';
+import SymbolInput from './SymbolInput';
 
 interface PortfolioBuilderProps {
   onSubmit: (name: string, assets: Asset[]) => void;
@@ -34,7 +35,9 @@ export default function PortfolioBuilder({ onSubmit, loading }: PortfolioBuilder
   };
 
   const totalWeight = assets.reduce((sum, a) => sum + a.weight, 0);
-  const isValid = assets.length > 0 && Math.abs(totalWeight - 1) < 0.01;
+  const isValid = assets.length > 0 &&
+    Math.abs(totalWeight - 1) < 0.01 &&
+    assets.every(a => a.symbol.length > 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +62,10 @@ export default function PortfolioBuilder({ onSubmit, loading }: PortfolioBuilder
         <h3>Assets</h3>
         {assets.map((asset, i) => (
           <div key={i} className="asset-row">
-            <input
-              type="text"
-              placeholder="Symbol (e.g., SPY)"
+            <SymbolInput
               value={asset.symbol}
-              onChange={(e) => updateAsset(i, 'symbol', e.target.value)}
-              required
+              onChange={(symbol) => updateAsset(i, 'symbol', symbol)}
+              placeholder="Search symbol..."
             />
             <input
               type="number"

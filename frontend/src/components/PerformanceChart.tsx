@@ -16,7 +16,7 @@ interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
 }
 
-const COLORS = ['#2563eb', '#dc2626', '#16a34a', '#9333ea', '#ea580c'];
+const COLORS = ['#3ecfb2', '#2eb89d', '#00b894', '#00a388', '#009177'];
 
 export default function PerformanceChart({ data }: PerformanceChartProps) {
   if (!data.length || !data[0].performance.dates.length) {
@@ -37,14 +37,27 @@ export default function PerformanceChart({ data }: PerformanceChartProps) {
       <h3>Portfolio Performance (Normalized to 100)</h3>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#d1e3dd" />
           <XAxis
             dataKey="date"
             tickFormatter={(value) => value.slice(5)} // Show MM-DD
             interval="preserveStartEnd"
+            stroke="#636e72"
+            tick={{ fill: '#636e72' }}
           />
-          <YAxis domain={['auto', 'auto']} />
-          <Tooltip />
+          <YAxis
+            domain={['auto', 'auto']}
+            stroke="#636e72"
+            tick={{ fill: '#636e72' }}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: '#ffffff',
+              border: '1px solid #d1e3dd',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}
+          />
           <Legend />
           {data.map((portfolio, i) => (
             <Line

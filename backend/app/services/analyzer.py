@@ -25,10 +25,26 @@ class PortfolioAnalyzer:
             progress=False
         )
 
-        if len(symbols) == 1:
-            prices = data['Adj Close'].to_frame(symbols[0])
+        # Handle yfinance column format (may be MultiIndex or flat)
+        if isinstance(data.columns, pd.MultiIndex):
+            # New yfinance format: MultiIndex columns like ('Adj Close', 'SPY')
+            # Try 'Adj Close' first, fall back to 'Close' if not available
+            if 'Adj Close' in data.columns.get_level_values(0):
+                prices = data['Adj Close']
+            else:
+                prices = data['Close']
         else:
-            prices = data['Adj Close']
+            # Single ticker or old format
+            if 'Adj Close' in data.columns:
+                prices = data['Adj Close']
+            elif 'Close' in data.columns:
+                prices = data['Close']
+            else:
+                raise ValueError(f"No price data found for symbols: {symbols}")
+
+        # Ensure we have a DataFrame with symbol columns
+        if isinstance(prices, pd.Series):
+            prices = prices.to_frame(symbols[0])
 
         # Forward fill missing data, then filter to requested range
         prices = prices.ffill().dropna()

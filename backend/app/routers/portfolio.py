@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 
 from app.models.portfolio import (
@@ -61,21 +63,48 @@ async def compare_portfolios(request: ComparisonRequest):
 
 
 @router.get("/symbols/search")
-async def search_symbols(query: str):
-    """Search for ticker symbols."""
-    import yfinance as yf
+async def search_symbols(q: str):
+    """Search for ticker symbols using Yahoo Finance search API."""
+    import httpx
+
+    if not q or len(q) < 1:
+        return []
 
     try:
-        ticker = yf.Ticker(query.upper())
-        info = ticker.info
+        url = "https://query1.finance.yahoo.com/v1/finance/search"
+        params = {
+            "q": q,
+            "quotesCount": 10,
+            "newsCount": 0,
+            "listsCount": 0,
+            "enableFuzzyQuery": False,
+        }
+        headers = {
+            "User-Agent": "Mozilla/5.0"
+        }
 
-        if info and info.get('symbol'):
-            return {
-                "symbol": info.get('symbol'),
-                "name": info.get('longName') or info.get('shortName'),
-                "type": info.get('quoteType'),
-                "exchange": info.get('exchange')
-            }
-        return {"error": "Symbol not found"}
-    except Exception:
-        return {"error": "Symbol not found"}
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url, params=params, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+
+        quotes = data.get("quotes", [])
+        results = []
+        for quote in quotes[:10]:
+            results.append({
+                "symbol": quote.get("symbol"),
+                "name": quote.get("shortname") or quote.get("longname"),
+                "type": quote.get("quoteType"),
+                "exchange": quote.get("exchange"),
+            })
+
+        return results
+    except httpx.TimeoutException:
+        logging.error(f"Symbol search timeout for query: {q}")
+        raise HTTPException(status_code=504, detail="Symbol search timed out")
+    except httpx.HTTPStatusError as e:
+        logging.error(f"Symbol search HTTP error for query {q}: {e.response.status_code}")
+        raise HTTPException(status_code=502, detail="Symbol search service unavailable")
+    except Exception as e:
+        logging.error(f"Symbol search error for query {q}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Symbol search failed")
