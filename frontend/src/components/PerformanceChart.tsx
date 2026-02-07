@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -11,7 +12,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { PerformanceData } from '@/lib/api';
-import { PORTFOLIO_COLORS, getPortfolioColor } from '@/lib/colors';
+import { getPortfolioColor } from '@/lib/colors';
+import { CHART_TOOLTIP_STYLE, CHART_AXIS_STYLE } from '@/lib/theme';
+import { getHighlightState } from '@/lib/utils';
 
 interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
@@ -31,14 +34,16 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
     );
   }
 
-  // Transform data for Recharts
-  const chartData = data[0].performance.dates.map((date, i) => {
-    const point: Record<string, string | number> = { date };
-    data.forEach((portfolio) => {
-      point[portfolio.name] = portfolio.performance.values[i];
+  // Memoize chart data transformation
+  const chartData = useMemo(() => {
+    return data[0].performance.dates.map((date, i) => {
+      const point: Record<string, string | number> = { date };
+      data.forEach((portfolio) => {
+        point[portfolio.name] = portfolio.performance.values[i];
+      });
+      return point;
     });
-    return point;
-  });
+  }, [data]);
 
   return (
     <div className="chart-container">
@@ -53,29 +58,19 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
             dataKey="date"
             tickFormatter={(value) => value.slice(5)} // Show MM-DD
             interval="preserveStartEnd"
-            stroke="#636e72"
-            tick={{ fill: '#636e72' }}
+            {...CHART_AXIS_STYLE}
           />
           <YAxis
             domain={['auto', 'auto']}
-            stroke="#636e72"
-            tick={{ fill: '#636e72' }}
+            {...CHART_AXIS_STYLE}
           />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #d1e3dd',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }}
-          />
+          <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
           <Legend
             onMouseEnter={(e) => onPortfolioHover?.(e.dataKey as string)}
             onMouseLeave={() => onPortfolioHover?.(null)}
           />
           {data.map((portfolio, i) => {
-            const isHighlighted = highlightedPortfolio === portfolio.name;
-            const isDimmed = highlightedPortfolio && !isHighlighted;
+            const { isHighlighted, isDimmed } = getHighlightState(portfolio.name, highlightedPortfolio ?? null);
             return (
               <Line
                 key={portfolio.name}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { searchSymbols, SymbolResult, SymbolSearchError } from '@/lib/api';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface SymbolInputProps {
   value: string;
@@ -20,21 +21,37 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
+  const resetDropdown = useCallback(() => {
+    setResults([]);
+    setIsOpen(false);
+    setHighlightIndex(-1);
+    setError(null);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useClickOutside([inputRef, dropdownRef], () => setIsOpen(false));
+
   // Sync inputValue when value prop changes and clear pending debounce
   useEffect(() => {
     setInputValue(value);
-    // Clear any pending search when value prop changes externally
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
       debounceRef.current = null;
     }
   }, [value]);
 
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
   const performSearch = useCallback(async (query: string) => {
-    if (!query || query.length < 1) {
-      setResults([]);
-      setIsOpen(false);
-      setError(null);
+    if (!query.trim()) {
+      resetDropdown();
       return;
     }
 
@@ -47,27 +64,21 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
       setHighlightIndex(-1);
     } catch (err) {
       setResults([]);
-      setIsOpen(true); // Keep open to show error
-      if (err instanceof SymbolSearchError) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred');
-      }
+      setIsOpen(true);
+      setError(err instanceof SymbolSearchError ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [resetDropdown]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.toUpperCase();
     setInputValue(newValue);
 
-    // Clear previous debounce
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
-    // Debounce search
     debounceRef.current = setTimeout(() => {
       performSearch(newValue);
     }, 300);
@@ -76,9 +87,8 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
   const selectSymbol = (symbol: string) => {
     setInputValue(symbol);
     onChange(symbol);
+    resetDropdown();
     setIsOpen(false);
-    setResults([]);
-    setHighlightIndex(-1);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -108,32 +118,6 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
     }
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(e.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Cleanup debounce on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
-  }, []);
-
   return (
     <div className="symbol-input-container">
       <input
@@ -143,11 +127,9 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         onFocus={() => {
-          // Reopen dropdown if we have results or an error to show
           if (results.length > 0 || error) {
             setIsOpen(true);
           } else if (inputValue.length > 0) {
-            // Trigger a new search if user focuses with text but no results
             performSearch(inputValue);
           }
         }}

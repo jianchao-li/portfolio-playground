@@ -120,10 +120,6 @@ export default function Home() {
     setEditingPortfolio(portfolio);
   };
 
-  const handleCloseEdit = () => {
-    setEditingPortfolio(null);
-  };
-
   // Auto-load Three-Fund Portfolio on mount
   useEffect(() => {
     if (!hasLoadedInitial.current) {
@@ -241,41 +237,28 @@ export default function Home() {
         />
       </div>
 
-      {/* Modal for Custom Portfolio */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+      {/* Modal for Custom/Edit Portfolio */}
+      {(showModal || editingPortfolio) && (
+        <div className="modal-overlay" onClick={() => {
+          setShowModal(false);
+          setEditingPortfolio(null);
+        }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Add Custom Portfolio</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
+              <h2>{editingPortfolio ? 'Edit Portfolio' : 'Add Custom Portfolio'}</h2>
+              <button className="modal-close" onClick={() => {
+                setShowModal(false);
+                setEditingPortfolio(null);
+              }}>
                 ×
               </button>
             </div>
             <PortfolioBuilder
               onSubmit={handleAnalyze}
               loading={loading}
-              initialName={newPortfolioName}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Modal for Editing Portfolio */}
-      {editingPortfolio && (
-        <div className="modal-overlay" onClick={handleCloseEdit}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Edit Portfolio</h2>
-              <button className="modal-close" onClick={handleCloseEdit}>
-                ×
-              </button>
-            </div>
-            <PortfolioBuilder
-              onSubmit={handleAnalyze}
-              loading={loading}
-              initialName={editingPortfolio.name}
-              initialAssets={editingPortfolio.assets}
-              submitLabel="Update Portfolio"
+              initialName={editingPortfolio?.name ?? newPortfolioName}
+              initialAssets={editingPortfolio?.assets}
+              submitLabel={editingPortfolio ? 'Update Portfolio' : undefined}
             />
           </div>
         </div>

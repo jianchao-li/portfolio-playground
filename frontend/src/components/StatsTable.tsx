@@ -2,6 +2,8 @@
 
 import { PortfolioStats } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
+import { formatPercent } from '@/lib/formatting';
+import { getHighlightState } from '@/lib/utils';
 
 interface StatsTableProps {
   stats: PortfolioStats[];
@@ -10,8 +12,6 @@ interface StatsTableProps {
 }
 
 export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHover }: StatsTableProps) {
-  const formatPercent = (value: number) => `${(value * 100).toFixed(2)}%`;
-
   return (
     <div className="stats-table-container">
       <h3>Portfolio Statistics</h3>
@@ -30,8 +30,7 @@ export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHov
           {stats.length > 0 ? (
             stats.map((s, index) => {
               const color = getPortfolioColor(index);
-              const isHighlighted = highlightedPortfolio === s.name;
-              const isDimmed = highlightedPortfolio && !isHighlighted;
+              const { isHighlighted, isDimmed } = getHighlightState(s.name, highlightedPortfolio ?? null);
 
               return (
                 <tr

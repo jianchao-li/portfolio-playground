@@ -29,29 +29,41 @@ export interface AnalysisResponse {
   performance: PerformanceData;
 }
 
+async function fetchFromAPI<T>(
+  endpoint: string,
+  options: RequestInit,
+  errorMessage: string
+): Promise<T> {
+  const response = await fetch(`${API_BASE}${endpoint}`, options);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || errorMessage);
+  }
+
+  return response.json();
+}
+
 export async function analyzePortfolio(
   portfolio: Portfolio,
   startDate: string,
   endDate: string,
   riskFreeRate: number = 0.05
 ): Promise<AnalysisResponse> {
-  const response = await fetch(`${API_BASE}/api/portfolio/analyze`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      portfolio,
-      start_date: startDate,
-      end_date: endDate,
-      risk_free_rate: riskFreeRate,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to analyze portfolio');
-  }
-
-  return response.json();
+  return fetchFromAPI<AnalysisResponse>(
+    '/api/portfolio/analyze',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        portfolio,
+        start_date: startDate,
+        end_date: endDate,
+        risk_free_rate: riskFreeRate,
+      }),
+    },
+    'Failed to analyze portfolio'
+  );
 }
 
 export async function comparePortfolios(
@@ -60,23 +72,20 @@ export async function comparePortfolios(
   endDate: string,
   riskFreeRate: number = 0.05
 ): Promise<{ portfolios: AnalysisResponse[] }> {
-  const response = await fetch(`${API_BASE}/api/portfolio/compare`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      portfolios,
-      start_date: startDate,
-      end_date: endDate,
-      risk_free_rate: riskFreeRate,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to compare portfolios');
-  }
-
-  return response.json();
+  return fetchFromAPI<{ portfolios: AnalysisResponse[] }>(
+    '/api/portfolio/compare',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        portfolios,
+        start_date: startDate,
+        end_date: endDate,
+        risk_free_rate: riskFreeRate,
+      }),
+    },
+    'Failed to compare portfolios'
+  );
 }
 
 export interface SymbolResult {
@@ -94,7 +103,7 @@ export class SymbolSearchError extends Error {
 }
 
 export async function searchSymbols(query: string): Promise<SymbolResult[]> {
-  if (!query || query.length < 1) {
+  if (!query.trim()) {
     return [];
   }
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Asset } from '@/lib/api';
+import { formatPercent } from '@/lib/formatting';
 import SymbolInput from './SymbolInput';
 
 interface PortfolioBuilderProps {
@@ -77,7 +78,7 @@ export default function PortfolioBuilder({
       <div className="assets-list">
         <h3>Assets</h3>
         {assets.map((asset, i) => (
-          <div key={i} className="asset-row">
+          <div key={`asset-${asset.symbol || 'empty'}-${i}`} className="asset-row">
             <SymbolInput
               value={asset.symbol}
               onChange={(symbol) => updateAsset(i, 'symbol', symbol)}
@@ -104,7 +105,7 @@ export default function PortfolioBuilder({
       </div>
 
       <div className={`weight-total ${isValid ? 'valid' : 'invalid'}`}>
-        Total Weight: {(totalWeight * 100).toFixed(1)}%
+        Total Weight: {formatPercent(totalWeight, 1)}
         {!isValid && <span> (must equal 100%)</span>}
       </div>
 

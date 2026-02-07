@@ -2,6 +2,9 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Asset } from '@/lib/api';
+import { getPieChartColor } from '@/lib/colors';
+import { CHART_TOOLTIP_STYLE } from '@/lib/theme';
+import { formatPercent } from '@/lib/formatting';
 
 interface PortfolioPopoverProps {
   name: string;
@@ -10,18 +13,6 @@ interface PortfolioPopoverProps {
   onRemove: () => void;
   onClose: () => void;
 }
-
-// Color palette for pie chart slices (distinct from main chart colors)
-const COLORS = [
-  '#6366f1', // indigo
-  '#f59e0b', // amber
-  '#10b981', // emerald
-  '#ef4444', // red
-  '#8b5cf6', // violet
-  '#06b6d4', // cyan
-  '#f97316', // orange
-  '#84cc16', // lime
-];
 
 export default function PortfolioPopover({
   name,
@@ -33,7 +24,7 @@ export default function PortfolioPopover({
   const chartData = assets.map((asset, i) => ({
     name: asset.symbol,
     value: asset.weight * 100,
-    color: COLORS[i % COLORS.length],
+    color: getPieChartColor(i),
   }));
 
   return (
@@ -56,15 +47,13 @@ export default function PortfolioPopover({
                 dataKey="value"
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell key={`cell-${entry.name}-${index}`} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip
                 formatter={(value: number) => `${value.toFixed(1)}%`}
                 contentStyle={{
-                  background: '#fff',
-                  border: '1px solid #d1e3dd',
-                  borderRadius: '8px',
+                  ...CHART_TOOLTIP_STYLE,
                   fontSize: '12px',
                 }}
               />
@@ -73,13 +62,13 @@ export default function PortfolioPopover({
         </div>
         <div className="popover-legend">
           {assets.map((asset, i) => (
-            <div key={i} className="legend-item">
+            <div key={`${asset.symbol}-${i}`} className="legend-item">
               <span
                 className="legend-color"
-                style={{ background: COLORS[i % COLORS.length] }}
+                style={{ background: getPieChartColor(i) }}
               />
               <span className="legend-symbol">{asset.symbol}</span>
-              <span className="legend-weight">{(asset.weight * 100).toFixed(0)}%</span>
+              <span className="legend-weight">{formatPercent(asset.weight, 0)}</span>
             </div>
           ))}
         </div>
