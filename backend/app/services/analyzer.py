@@ -106,7 +106,7 @@ class PortfolioAnalyzer:
         annualized_return = (1 + total_return) ** (self.TRADING_DAYS_PER_YEAR / num_days) - 1
 
         # Volatility (annualized)
-        volatility = daily_returns.std() * np.sqrt(self.TRADING_DAYS_PER_YEAR)
+        volatility = daily_returns.std(ddof=1) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
 
         # Sharpe ratio with historical daily risk-free rates
         if daily_rf_rates is not None:
@@ -118,7 +118,7 @@ class PortfolioAnalyzer:
             daily_rf = 0.05 / self.TRADING_DAYS_PER_YEAR
             excess_returns = daily_returns - daily_rf
 
-        sharpe_ratio = (excess_returns.mean() / excess_returns.std()) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
+        sharpe_ratio = (excess_returns.mean() / excess_returns.std(ddof=1)) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
 
         # Max drawdown
         rolling_max = portfolio_values.cummax()
