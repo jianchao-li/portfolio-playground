@@ -10,10 +10,11 @@ interface PortfolioBuilderProps {
 }
 
 export default function PortfolioBuilder({ onSubmit, loading }: PortfolioBuilderProps) {
-  const [name, setName] = useState('My Portfolio');
+  const [name, setName] = useState('Three-Fund Portfolio');
   const [assets, setAssets] = useState<Asset[]>([
-    { symbol: 'SPY', weight: 0.6 },
-    { symbol: 'BND', weight: 0.4 },
+    { symbol: 'VTI', weight: 0.6 },   // Total US Stock Market
+    { symbol: 'VXUS', weight: 0.2 },  // Total International Stock
+    { symbol: 'BND', weight: 0.2 },   // Total Bond Market
   ]);
 
   const addAsset = () => {

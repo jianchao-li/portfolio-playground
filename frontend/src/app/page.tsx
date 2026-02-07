@@ -1,10 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import PortfolioBuilder from '@/components/PortfolioBuilder';
 import PerformanceChart from '@/components/PerformanceChart';
 import StatsTable from '@/components/StatsTable';
 import { Asset, PortfolioStats, PerformanceData, analyzePortfolio } from '@/lib/api';
+
+// Default three-fund portfolio (Bogleheads)
+const DEFAULT_PORTFOLIO = {
+  name: 'Three-Fund Portfolio',
+  assets: [
+    { symbol: 'VTI', weight: 0.6 },
+    { symbol: 'VXUS', weight: 0.2 },
+    { symbol: 'BND', weight: 0.2 },
+  ] as Asset[],
+};
 
 interface PortfolioResult {
   name: string;
@@ -18,6 +28,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('2023-01-01');
   const [endDate, setEndDate] = useState('2024-01-01');
+  const hasLoadedInitial = useRef(false);
 
   const handleAnalyze = async (name: string, assets: Asset[]) => {
     setLoading(true);
@@ -41,6 +52,14 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  // Auto-analyze default portfolio on mount
+  useEffect(() => {
+    if (!hasLoadedInitial.current) {
+      hasLoadedInitial.current = true;
+      handleAnalyze(DEFAULT_PORTFOLIO.name, DEFAULT_PORTFOLIO.assets);
+    }
+  }, []);
 
   const clearResults = () => {
     setResults([]);
