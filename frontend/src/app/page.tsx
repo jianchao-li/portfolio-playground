@@ -49,10 +49,6 @@ const PRESET_PORTFOLIOS = [
     name: 'VIX (Volatility)',
     assets: [{ symbol: 'VIXY', weight: 1.0 }] as Asset[],
   },
-  {
-    name: 'Total World Stock',
-    assets: [{ symbol: 'VT', weight: 1.0 }] as Asset[],
-  },
 ];
 
 interface PortfolioResult {
