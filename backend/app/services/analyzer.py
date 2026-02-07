@@ -1,8 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from datetime import date, datetime, timedelta
-from functools import lru_cache
+from datetime import date, timedelta
 
 from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData, CurrencyCode
 from app.services.currency import CurrencyService
@@ -13,33 +12,33 @@ class PortfolioAnalyzer:
 
     def __init__(self):
         self.currency_service = CurrencyService()
-        self._cached_rf_rate: float | None = None
-        self._rf_cache_time: datetime | None = None
 
-    def fetch_risk_free_rate(self) -> float:
-        """Fetch current 3-month T-bill rate from Yahoo Finance."""
+    def fetch_risk_free_rates(self, start_date: date, end_date: date) -> pd.Series | None:
+        """Fetch historical daily 3-month T-bill rates for date range."""
+        adjusted_start = start_date - timedelta(days=5)
+
         try:
-            data = yf.download('^IRX', period='5d', progress=False)
+            data = yf.download(
+                tickers='^IRX',
+                start=adjusted_start.isoformat(),
+                end=end_date.isoformat(),
+                progress=False
+            )
             if len(data) > 0:
-                # ^IRX returns rate as percentage (e.g., 3.59 = 3.59%)
-                rate = data['Close'].iloc[-1]
-                if hasattr(rate, 'item'):
-                    rate = rate.item()
-                return rate / 100  # Convert to decimal
+                if isinstance(data.columns, pd.MultiIndex):
+                    rates = data['Close']['^IRX']
+                else:
+                    rates = data['Close']
+                # Convert percentage to decimal, then to daily rate
+                rates = (rates / 100) / self.TRADING_DAYS_PER_YEAR
+                rates = rates.ffill().dropna()
+                rates = rates[rates.index >= pd.Timestamp(start_date)]
+                return rates
         except Exception:
             pass
-        return 0.05  # Fallback to 5% if fetch fails
 
-    @property
-    def risk_free_rate(self) -> float:
-        """Get risk-free rate with 1-hour cache."""
-        now = datetime.now()
-        if self._cached_rf_rate is None or \
-           self._rf_cache_time is None or \
-           (now - self._rf_cache_time).seconds > 3600:
-            self._cached_rf_rate = self.fetch_risk_free_rate()
-            self._rf_cache_time = now
-        return self._cached_rf_rate
+        # Fallback: return None to use constant rate
+        return None
 
     def fetch_prices(self, symbols: list[str], start_date: date, end_date: date) -> pd.DataFrame:
         """Fetch adjusted close prices for given symbols."""
@@ -93,7 +92,8 @@ class PortfolioAnalyzer:
 
         return portfolio_value * 100  # Start at 100
 
-    def calculate_stats(self, portfolio_values: pd.Series, name: str) -> PortfolioStats:
+    def calculate_stats(self, portfolio_values: pd.Series, name: str,
+                        daily_rf_rates: pd.Series | None = None) -> PortfolioStats:
         """Calculate portfolio statistics."""
         # Daily returns
         daily_returns = portfolio_values.pct_change().dropna()
@@ -108,9 +108,16 @@ class PortfolioAnalyzer:
         # Volatility (annualized)
         volatility = daily_returns.std() * np.sqrt(self.TRADING_DAYS_PER_YEAR)
 
-        # Sharpe ratio
-        daily_rf = self.risk_free_rate / self.TRADING_DAYS_PER_YEAR
-        excess_returns = daily_returns - daily_rf
+        # Sharpe ratio with historical daily risk-free rates
+        if daily_rf_rates is not None:
+            # Align risk-free rates with daily returns index
+            aligned_rf = daily_rf_rates.reindex(daily_returns.index, method='ffill').bfill()
+            excess_returns = daily_returns - aligned_rf
+        else:
+            # Fallback to constant 5% annual rate
+            daily_rf = 0.05 / self.TRADING_DAYS_PER_YEAR
+            excess_returns = daily_returns - daily_rf
+
         sharpe_ratio = (excess_returns.mean() / excess_returns.std()) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
 
         # Max drawdown
@@ -143,7 +150,10 @@ class PortfolioAnalyzer:
             aligned_rates = exchange_rates.reindex(portfolio_values.index, method="ffill").bfill()
             portfolio_values = portfolio_values * aligned_rates
 
-        stats = self.calculate_stats(portfolio_values, portfolio.name)
+        # Fetch historical risk-free rates for Sharpe ratio calculation
+        rf_rates = self.fetch_risk_free_rates(start_date, end_date)
+
+        stats = self.calculate_stats(portfolio_values, portfolio.name, rf_rates)
 
         performance = PerformanceData(
             dates=[d.strftime('%Y-%m-%d') for d in portfolio_values.index],
