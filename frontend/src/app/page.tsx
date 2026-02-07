@@ -339,7 +339,12 @@ export default function Home() {
       {error && <div className="error-message">{error}</div>}
 
       {/* Full Width Results */}
-      <div className="results-full">
+      <div className="results-full" style={{ position: 'relative' }}>
+        {loading && results.length > 0 && (
+          <div className="results-loading-overlay">
+            <span className="results-loading-indicator">Loading…</span>
+          </div>
+        )}
         <Suspense fallback={<ChartSkeleton />}>
           <PerformanceChart
             data={results.map((r) => ({

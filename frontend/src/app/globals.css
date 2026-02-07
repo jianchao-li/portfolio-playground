@@ -1053,6 +1053,29 @@ input[type="date"]:focus {
 }
 
 /* Loading Skeletons */
+/* Results loading overlay */
+.results-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.6);
+  z-index: 20;
+  border-radius: var(--radius);
+}
+
+.results-loading-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.9rem;
+  color: var(--fg-secondary);
+  box-shadow: var(--shadow);
+}
+
 @keyframes pulse {
   0%, 100% {
     opacity: 0.4;
