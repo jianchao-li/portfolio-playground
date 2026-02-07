@@ -39,6 +39,8 @@ body {
 header {
   text-align: center;
   margin-bottom: 2rem;
+  position: relative;
+  z-index: 200;
 }
 
 header h1 {
@@ -48,7 +50,8 @@ header h1 {
   font-weight: 700;
 }
 
-header p {
+header p,
+.header-subtitle {
   color: var(--fg-secondary);
 }
 
@@ -62,6 +65,73 @@ header p {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+}
+
+/* Disclaimer Text Link & Tooltip */
+.disclaimer-wrapper {
+  display: inline-block;
+}
+
+.disclaimer-wrapper::before {
+  content: "\00b7";
+  color: var(--fg-secondary);
+  margin: 0 0.4rem;
+  opacity: 0.6;
+}
+
+.disclaimer-link {
+  background: none;
+  border: none;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  font-family: inherit;
+  transition: color 0.2s, text-decoration 0.2s;
+  vertical-align: baseline;
+  line-height: inherit;
+  text-decoration: none;
+}
+
+.disclaimer-link:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.disclaimer-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: 480px;
+  max-width: 90vw;
+  margin-top: 4px;
+}
+
+.disclaimer-tooltip-content {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-hover);
+  padding: 1rem 1.25rem;
+  text-align: left;
+}
+
+.disclaimer-tooltip-content strong {
+  display: block;
+  color: var(--fg);
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+}
+
+.disclaimer-tooltip-content span {
+  display: block;
+  color: var(--fg-secondary);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.6;
+  margin: 0;
 }
 
 /* Portfolio Selector */
@@ -170,8 +240,8 @@ header p {
 }
 
 .date-field input {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
+  padding: 0.75rem;
+  font-size: 0.95rem;
 }
 
 /* Currency Selector */
@@ -191,8 +261,8 @@ header p {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
+  padding: 0.75rem;
+  font-size: 0.95rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg-solid);
@@ -200,7 +270,7 @@ header p {
   font-family: inherit;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
-  min-width: 120px;
+  width: 100%;
 }
 
 .currency-trigger:focus {

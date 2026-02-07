@@ -17,23 +17,20 @@ const METRIC_DEFINITIONS: Record<string, string> = {
 interface InfoTooltipProps {
   term: string;
   isOpen: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
+  onClose: () => void;
 }
 
-function InfoTooltip({ term, isOpen, onToggle }: InfoTooltipProps) {
+function InfoTooltip({ term, isOpen, onOpen, onClose }: InfoTooltipProps) {
   return (
-    <span className="info-tooltip-wrapper">
-      <button
-        type="button"
-        className="info-icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        aria-label={`Info about ${term}`}
-      >
+    <span
+      className="info-tooltip-wrapper"
+      onMouseEnter={onOpen}
+      onMouseLeave={onClose}
+    >
+      <span className="info-icon" aria-label={`Info about ${term}`}>
         ⓘ
-      </button>
+      </span>
       {isOpen && (
         <div className="info-tooltip">
           <div className="info-tooltip-content">
@@ -55,12 +52,8 @@ interface StatsTableProps {
 export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHover }: StatsTableProps) {
   const [openTooltip, setOpenTooltip] = useState<string | null>(null);
 
-  const toggleTooltip = (term: string) => {
-    setOpenTooltip(openTooltip === term ? null : term);
-  };
-
   return (
-    <div className="stats-table-container" onClick={() => setOpenTooltip(null)}>
+    <div className="stats-table-container">
       <h3>Portfolio Statistics</h3>
       <table className="stats-table">
         <thead>
@@ -68,23 +61,23 @@ export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHov
             <th>Portfolio</th>
             <th>
               Total Return
-              <InfoTooltip term="Total Return" isOpen={openTooltip === 'Total Return'} onToggle={() => toggleTooltip('Total Return')} />
+              <InfoTooltip term="Total Return" isOpen={openTooltip === 'Total Return'} onOpen={() => setOpenTooltip('Total Return')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
               Annualized Return
-              <InfoTooltip term="Annualized Return" isOpen={openTooltip === 'Annualized Return'} onToggle={() => toggleTooltip('Annualized Return')} />
+              <InfoTooltip term="Annualized Return" isOpen={openTooltip === 'Annualized Return'} onOpen={() => setOpenTooltip('Annualized Return')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
               Volatility
-              <InfoTooltip term="Volatility" isOpen={openTooltip === 'Volatility'} onToggle={() => toggleTooltip('Volatility')} />
+              <InfoTooltip term="Volatility" isOpen={openTooltip === 'Volatility'} onOpen={() => setOpenTooltip('Volatility')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
               Sharpe Ratio
-              <InfoTooltip term="Sharpe Ratio" isOpen={openTooltip === 'Sharpe Ratio'} onToggle={() => toggleTooltip('Sharpe Ratio')} />
+              <InfoTooltip term="Sharpe Ratio" isOpen={openTooltip === 'Sharpe Ratio'} onOpen={() => setOpenTooltip('Sharpe Ratio')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
               Max Drawdown
-              <InfoTooltip term="Max Drawdown" isOpen={openTooltip === 'Max Drawdown'} onToggle={() => toggleTooltip('Max Drawdown')} />
+              <InfoTooltip term="Max Drawdown" isOpen={openTooltip === 'Max Drawdown'} onOpen={() => setOpenTooltip('Max Drawdown')} onClose={() => setOpenTooltip(null)} />
             </th>
           </tr>
         </thead>

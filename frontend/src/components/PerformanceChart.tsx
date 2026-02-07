@@ -30,25 +30,22 @@ function formatFullDate(dateStr: string): string {
 
 interface ChartInfoTooltipProps {
   isOpen: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
+  onClose: () => void;
   currencyName: string;
 }
 
-function ChartInfoTooltip({ isOpen, onToggle, currencyName }: ChartInfoTooltipProps) {
+function ChartInfoTooltip({ isOpen, onOpen, onClose, currencyName }: ChartInfoTooltipProps) {
   const isUSD = currencyName === 'US Dollar';
   return (
-    <span className="info-tooltip-wrapper">
-      <button
-        type="button"
-        className="info-icon"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        aria-label="How this chart works"
-      >
+    <span
+      className="info-tooltip-wrapper"
+      onMouseEnter={onOpen}
+      onMouseLeave={onClose}
+    >
+      <span className="info-icon" aria-label="How this chart works">
         &#9432;
-      </button>
+      </span>
       {isOpen && (
         <div className="info-tooltip chart-info-tooltip">
           <div className="info-tooltip-content">
@@ -119,12 +116,13 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
 
   if (!data.length || !data[0]?.performance?.dates?.length) {
     return (
-      <div className="chart-container" onClick={() => setShowInfoTooltip(false)}>
+      <div className="chart-container">
         <h3>
           Portfolio Performance
           <ChartInfoTooltip
             isOpen={showInfoTooltip}
-            onToggle={() => setShowInfoTooltip(!showInfoTooltip)}
+            onOpen={() => setShowInfoTooltip(true)}
+            onClose={() => setShowInfoTooltip(false)}
             currencyName={currencyName}
           />
         </h3>
@@ -136,12 +134,13 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
   }
 
   return (
-    <div className="chart-container" onClick={() => setShowInfoTooltip(false)}>
+    <div className="chart-container">
       <h3>
         Portfolio Performance
         <ChartInfoTooltip
           isOpen={showInfoTooltip}
-          onToggle={() => setShowInfoTooltip(!showInfoTooltip)}
+          onOpen={() => setShowInfoTooltip(true)}
+          onClose={() => setShowInfoTooltip(false)}
           currencyName={currencyName}
         />
       </h3>

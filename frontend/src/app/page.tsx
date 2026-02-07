@@ -66,6 +66,7 @@ export default function Home() {
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioResult | null>(null);
   const [highlightedPortfolio, setHighlightedPortfolio] = useState<string | null>(null);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
   const portfolioCounter = useRef(0);
   const hasLoadedInitial = useRef(false);
   const resultsRef = useRef<PortfolioResult[]>([]);
@@ -201,7 +202,24 @@ export default function Home() {
     <div className="container">
       <header>
         <h1>Portfolio Playground</h1>
-        <p>Build, analyze, and compare investment portfolios</p>
+        <div className="header-subtitle">
+          <span>Build, analyze, and compare investment portfolios</span>
+          <span
+            className="disclaimer-wrapper"
+            onMouseEnter={() => setShowDisclaimer(true)}
+            onMouseLeave={() => setShowDisclaimer(false)}
+          >
+            <span className="disclaimer-link">Disclaimer</span>
+            {showDisclaimer && (
+              <div className="disclaimer-tooltip">
+                <div className="disclaimer-tooltip-content">
+                  <strong>Disclaimer</strong>
+                  <span>For informational and educational purposes only — not financial advice. The author is not a financial advisor, and use of this tool does not create an advisory relationship. Data may be inaccurate, delayed, or incomplete. The author assumes no liability for any losses or damages arising from reliance on information provided. Consult a qualified financial professional before making investment decisions.</span>
+                </div>
+              </div>
+            )}
+          </span>
+        </div>
       </header>
 
       {/* Settings Bar */}
