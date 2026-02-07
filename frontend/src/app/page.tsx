@@ -69,6 +69,12 @@ export default function Home() {
   const [highlightedPortfolio, setHighlightedPortfolio] = useState<string | null>(null);
   const portfolioCounter = useRef(0);
   const hasLoadedInitial = useRef(false);
+  const resultsRef = useRef<PortfolioResult[]>([]);
+
+  // Keep ref in sync with results state
+  useEffect(() => {
+    resultsRef.current = results;
+  }, [results]);
 
   // Generate next available portfolio name
   const getNextPortfolioName = () => {
@@ -132,6 +138,39 @@ export default function Home() {
       handleAnalyze(threeFund.name, threeFund.assets);
     }
   }, []);
+
+  // Re-fetch all portfolios when date range changes
+  useEffect(() => {
+    const currentResults = resultsRef.current;
+    if (!hasLoadedInitial.current || currentResults.length === 0) {
+      return;
+    }
+
+    const refreshPortfolios = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const refreshedResults = await Promise.all(
+          currentResults.map(async (r) => {
+            const response = await analyzePortfolio(
+              { name: r.name, assets: r.assets },
+              startDate,
+              endDate
+            );
+            return { name: r.name, assets: r.assets, ...response };
+          })
+        );
+        setResults(refreshedResults);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to refresh data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    refreshPortfolios();
+  }, [startDate, endDate]);
 
   return (
     <div className="container">
