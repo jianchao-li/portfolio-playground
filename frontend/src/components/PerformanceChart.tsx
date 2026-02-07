@@ -55,12 +55,12 @@ function ChartInfoTooltip({ isOpen, onToggle, currencySymbol }: ChartInfoTooltip
             <strong>How this chart works</strong>
             {isUSD ? (
               <p>
-                Each portfolio starts at $100 on the first day.
+                Each portfolio starts at $100 on the first day. Dividends are reinvested.
                 The curve shows how that initial investment would have grown (or shrunk) over time.
               </p>
             ) : (
               <p>
-                Each portfolio starts with a $100 USD investment, converted to {currencySymbol} at the starting exchange rate.
+                Each portfolio starts with a $100 USD investment, converted to {currencySymbol} at the starting exchange rate. Dividends are reinvested.
                 The curve shows combined asset performance and currency movement over time.
               </p>
             )}
