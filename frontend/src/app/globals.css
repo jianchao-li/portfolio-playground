@@ -422,6 +422,9 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: background 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-right: 0.25rem;
 }
 
 .add-custom-btn:hover {
@@ -546,7 +549,7 @@ input[type="date"]:focus {
 
 .asset-row {
   display: grid;
-  grid-template-columns: 1fr 80px 30px;
+  grid-template-columns: 1fr 120px 30px;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
 }

@@ -69,10 +69,24 @@ export default function PortfolioBuilder({
     return isNaN(n) ? 0 : n;
   };
 
+  const weightErrors: string[] = [];
+  const hasEmpty = assets.some(a => a.weight === '');
+  const hasInvalid = assets.some(a => a.weight !== '' && isNaN(Number(a.weight)));
+  const hasOutOfRange = assets.some(a => {
+    const n = Number(a.weight);
+    return a.weight !== '' && !isNaN(n) && (n < 0 || n > 1);
+  });
   const totalWeight = assets.reduce((sum, a) => sum + parseWeight(a.weight), 0);
+  const totalOff = !hasEmpty && !hasInvalid && !hasOutOfRange && Math.abs(totalWeight - 1) >= 0.01;
+
+  if (hasEmpty) weightErrors.push('Set a weight for each asset');
+  if (hasInvalid) weightErrors.push('Weights must be valid numbers');
+  if (hasOutOfRange) weightErrors.push('Each weight must be between 0 and 1');
+  if (totalOff) weightErrors.push(`Weights must sum to 1 (currently ${totalWeight.toFixed(2)})`);
+
   const isValid = assets.length > 0 &&
-    Math.abs(totalWeight - 1) < 0.01 &&
-    assets.every(a => a.symbol.length > 0 && a.weight !== '' && !isNaN(Number(a.weight)));
+    weightErrors.length === 0 &&
+    assets.every(a => a.symbol.length > 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,8 +134,10 @@ export default function PortfolioBuilder({
       </div>
 
       <div className={`weight-total ${isValid ? 'valid' : 'invalid'}`}>
-        Total Weight: {formatPercent(totalWeight, 1)}
-        {!isValid && <span> (must equal 100%)</span>}
+        {isValid
+          ? `Total Weight: ${formatPercent(totalWeight, 1)}`
+          : weightErrors.join(' · ')
+        }
       </div>
 
       <button type="submit" disabled={!isValid || loading} className="submit-btn">

@@ -67,7 +67,6 @@ export default function Home() {
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioResult | null>(null);
   const [highlightedPortfolio, setHighlightedPortfolio] = useState<string | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const portfolioCounter = useRef(1);
   const hasLoadedInitial = useRef(false);
   const resultsRef = useRef<PortfolioResult[]>([]);
 
@@ -78,9 +77,11 @@ export default function Home() {
 
   // Generate next available portfolio name
   const getNextPortfolioName = () => {
-    const name = `Portfolio ${portfolioCounter.current}`;
-    portfolioCounter.current += 1;
-    return name;
+    let n = 1;
+    while (results.some(r => r.name === `Portfolio ${n}`)) {
+      n++;
+    }
+    return `Portfolio ${n}`;
   };
 
   const openAddModal = () => {
