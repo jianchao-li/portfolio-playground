@@ -62,6 +62,7 @@ export default function Home() {
   const [newPortfolioName, setNewPortfolioName] = useState('');
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioResult | null>(null);
+  const [highlightedPortfolio, setHighlightedPortfolio] = useState<string | null>(null);
   const portfolioCounter = useRef(0);
   const hasLoadedInitial = useRef(false);
 
@@ -230,8 +231,14 @@ export default function Home() {
             name: r.name,
             performance: r.performance,
           }))}
+          highlightedPortfolio={highlightedPortfolio}
+          onPortfolioHover={setHighlightedPortfolio}
         />
-        <StatsTable stats={results.map((r) => r.stats)} />
+        <StatsTable
+          stats={results.map((r) => r.stats)}
+          highlightedPortfolio={highlightedPortfolio}
+          onPortfolioHover={setHighlightedPortfolio}
+        />
       </div>
 
       {/* Modal for Custom Portfolio */}

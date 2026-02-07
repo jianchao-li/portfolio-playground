@@ -11,14 +11,15 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { PerformanceData } from '@/lib/api';
+import { PORTFOLIO_COLORS, getPortfolioColor } from '@/lib/colors';
 
 interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
+  highlightedPortfolio?: string | null;
+  onPortfolioHover?: (name: string | null) => void;
 }
 
-const COLORS = ['#3ecfb2', '#e74c3c', '#9b59b6', '#f39c12', '#3498db', '#1abc9c', '#e91e63'];
-
-export default function PerformanceChart({ data }: PerformanceChartProps) {
+export default function PerformanceChart({ data, highlightedPortfolio, onPortfolioHover }: PerformanceChartProps) {
   if (!data.length || !data[0]?.performance?.dates?.length) {
     return (
       <div className="chart-container">
@@ -43,7 +44,10 @@ export default function PerformanceChart({ data }: PerformanceChartProps) {
     <div className="chart-container">
       <h3>Portfolio Performance (Normalized to 100)</h3>
       <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={chartData}>
+        <LineChart
+          data={chartData}
+          onMouseLeave={() => onPortfolioHover?.(null)}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#d1e3dd" />
           <XAxis
             dataKey="date"
@@ -65,17 +69,27 @@ export default function PerformanceChart({ data }: PerformanceChartProps) {
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
             }}
           />
-          <Legend />
-          {data.map((portfolio, i) => (
-            <Line
-              key={portfolio.name}
-              type="monotone"
-              dataKey={portfolio.name}
-              stroke={COLORS[i % COLORS.length]}
-              dot={false}
-              strokeWidth={2}
-            />
-          ))}
+          <Legend
+            onMouseEnter={(e) => onPortfolioHover?.(e.dataKey as string)}
+            onMouseLeave={() => onPortfolioHover?.(null)}
+          />
+          {data.map((portfolio, i) => {
+            const isHighlighted = highlightedPortfolio === portfolio.name;
+            const isDimmed = highlightedPortfolio && !isHighlighted;
+            return (
+              <Line
+                key={portfolio.name}
+                type="monotone"
+                dataKey={portfolio.name}
+                stroke={getPortfolioColor(i)}
+                dot={false}
+                strokeWidth={isHighlighted ? 3 : 2}
+                strokeOpacity={isDimmed ? 0.25 : 1}
+                style={{ transition: 'stroke-width 200ms, stroke-opacity 200ms' }}
+                onMouseEnter={() => onPortfolioHover?.(portfolio.name)}
+              />
+            );
+          })}
         </LineChart>
       </ResponsiveContainer>
     </div>

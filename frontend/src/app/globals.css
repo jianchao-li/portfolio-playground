@@ -929,3 +929,21 @@ input[type="date"]:focus {
 .popover-remove-btn:hover {
   background: rgba(231, 76, 60, 0.1);
 }
+
+/* Stats Table Row Highlighting */
+.stats-table tbody tr.stats-row {
+  transition: background-color 200ms ease, opacity 200ms ease;
+  cursor: pointer;
+}
+
+.stats-table tbody tr.stats-row:hover {
+  background-color: rgba(62, 207, 178, 0.15) !important;
+}
+
+.stats-table tbody tr.stats-row.highlighted {
+  background-color: rgba(62, 207, 178, 0.2) !important;
+}
+
+.stats-table tbody tr.stats-row.dimmed {
+  opacity: 0.5;
+}
