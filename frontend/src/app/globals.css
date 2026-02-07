@@ -134,6 +134,43 @@ header p {
   font-size: 0.9rem;
 }
 
+/* Currency Selector */
+.currency-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.currency-selector label {
+  font-size: 0.75rem;
+  color: var(--fg-secondary);
+  font-weight: 500;
+}
+
+.currency-selector select {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-solid);
+  color: var(--fg);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-width: 180px;
+}
+
+.currency-selector select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(62, 207, 178, 0.2);
+}
+
+.currency-selector select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Portfolio Chips */
 .portfolio-chips {
   display: flex;

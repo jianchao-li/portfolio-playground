@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import date
+
+CurrencyCode = Literal["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD"]
 
 
 class Asset(BaseModel):
@@ -22,6 +24,7 @@ class AnalysisRequest(BaseModel):
     start_date: date
     end_date: date
     risk_free_rate: float = Field(default=0.05, description="Annual risk-free rate for Sharpe ratio")
+    currency: CurrencyCode = Field(default="USD", description="Currency for portfolio values")
 
 
 class ComparisonRequest(BaseModel):
@@ -29,6 +32,7 @@ class ComparisonRequest(BaseModel):
     start_date: date
     end_date: date
     risk_free_rate: float = Field(default=0.05)
+    currency: CurrencyCode = Field(default="USD", description="Currency for portfolio values")
 
 
 class PortfolioStats(BaseModel):
@@ -48,3 +52,4 @@ class PerformanceData(BaseModel):
 class AnalysisResponse(BaseModel):
     stats: PortfolioStats
     performance: PerformanceData
+    currency: str = "USD"

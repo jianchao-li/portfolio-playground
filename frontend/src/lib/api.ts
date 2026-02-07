@@ -1,5 +1,33 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CHF' | 'CAD' | 'AUD';
+
+export interface CurrencyInfo {
+  code: CurrencyCode;
+  symbol: string;
+  name: string;
+}
+
+export const CURRENCIES: CurrencyInfo[] = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+];
+
+export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  CHF: 'Fr',
+  CAD: 'C$',
+  AUD: 'A$',
+};
+
 export interface Asset {
   symbol: string;
   weight: number;
@@ -27,6 +55,7 @@ export interface PerformanceData {
 export interface AnalysisResponse {
   stats: PortfolioStats;
   performance: PerformanceData;
+  currency: CurrencyCode;
 }
 
 async function fetchFromAPI<T>(
@@ -48,7 +77,8 @@ export async function analyzePortfolio(
   portfolio: Portfolio,
   startDate: string,
   endDate: string,
-  riskFreeRate: number = 0.05
+  riskFreeRate: number = 0.05,
+  currency: CurrencyCode = 'USD'
 ): Promise<AnalysisResponse> {
   return fetchFromAPI<AnalysisResponse>(
     '/api/portfolio/analyze',
@@ -60,6 +90,7 @@ export async function analyzePortfolio(
         start_date: startDate,
         end_date: endDate,
         risk_free_rate: riskFreeRate,
+        currency,
       }),
     },
     'Failed to analyze portfolio'

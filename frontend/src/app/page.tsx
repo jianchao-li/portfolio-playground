@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import PortfolioBuilder from '@/components/PortfolioBuilder';
 import PortfolioPopover from '@/components/PortfolioPopover';
+import CurrencySelector from '@/components/CurrencySelector';
 import { ChartSkeleton, TableSkeleton } from '@/components/LoadingSkeletons';
-import { Asset, PortfolioStats, PerformanceData, analyzePortfolio } from '@/lib/api';
+import { Asset, PortfolioStats, PerformanceData, analyzePortfolio, CurrencyCode } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 
 // Lazy load heavy chart components
@@ -59,6 +60,7 @@ export default function Home() {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
+  const [currency, setCurrency] = useState<CurrencyCode>('USD');
   const [showModal, setShowModal] = useState(false);
   const [newPortfolioName, setNewPortfolioName] = useState('');
   const [openPopover, setOpenPopover] = useState<string | null>(null);
@@ -93,7 +95,9 @@ export default function Home() {
       const response = await analyzePortfolio(
         { name, assets },
         startDate,
-        endDate
+        endDate,
+        0.05,
+        currency
       );
 
       // Add to results (or replace if same name exists), including assets
@@ -140,7 +144,9 @@ export default function Home() {
               const response = await analyzePortfolio(
                 { name: preset.name, assets: preset.assets },
                 startDate,
-                endDate
+                endDate,
+                0.05,
+                currency
               );
               return { name: preset.name, assets: preset.assets, ...response };
             })
@@ -156,7 +162,7 @@ export default function Home() {
     }
   }, []);
 
-  // Re-fetch all portfolios when date range changes
+  // Re-fetch all portfolios when date range or currency changes
   useEffect(() => {
     const currentResults = resultsRef.current;
     if (!hasLoadedInitial.current || currentResults.length === 0) {
@@ -173,7 +179,9 @@ export default function Home() {
             const response = await analyzePortfolio(
               { name: r.name, assets: r.assets },
               startDate,
-              endDate
+              endDate,
+              0.05,
+              currency
             );
             return { name: r.name, assets: r.assets, ...response };
           })
@@ -187,7 +195,7 @@ export default function Home() {
     };
 
     refreshPortfolios();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, currency]);
 
   return (
     <div className="container">
@@ -217,6 +225,11 @@ export default function Home() {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
+            <CurrencySelector
+              value={currency}
+              onChange={setCurrency}
+              disabled={loading}
+            />
           </div>
 
           <div className="controls-divider" />
@@ -297,6 +310,7 @@ export default function Home() {
             }))}
             highlightedPortfolio={highlightedPortfolio}
             onPortfolioHover={setHighlightedPortfolio}
+            currency={currency}
           />
         </Suspense>
         <Suspense fallback={<TableSkeleton />}>

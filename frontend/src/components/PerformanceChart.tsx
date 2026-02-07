@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { PerformanceData } from '@/lib/api';
+import { PerformanceData, CurrencyCode, CURRENCY_SYMBOLS } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 import { CHART_TOOLTIP_STYLE, CHART_TOOLTIP_ITEM_STYLE, CHART_TOOLTIP_LABEL_STYLE, CHART_AXIS_STYLE } from '@/lib/theme';
 import { getHighlightState } from '@/lib/utils';
@@ -32,13 +32,16 @@ interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
   highlightedPortfolio?: string | null;
   onPortfolioHover?: (name: string | null) => void;
+  currency?: CurrencyCode;
 }
 
-export default function PerformanceChart({ data, highlightedPortfolio, onPortfolioHover }: PerformanceChartProps) {
+export default function PerformanceChart({ data, highlightedPortfolio, onPortfolioHover, currency = 'USD' }: PerformanceChartProps) {
+  const currencySymbol = CURRENCY_SYMBOLS[currency] || '$';
+
   if (!data.length || !data[0]?.performance?.dates?.length) {
     return (
       <div className="chart-container">
-        <h3>Portfolio Performance (Normalized to $100)</h3>
+        <h3>Portfolio Performance (Normalized to {currencySymbol}100)</h3>
         <div className="chart-empty">
           <p>Select portfolios to compare performance</p>
         </div>
@@ -78,7 +81,7 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
 
   return (
     <div className="chart-container">
-      <h3>Portfolio Performance (Normalized to $100)</h3>
+      <h3>Portfolio Performance (Normalized to {currencySymbol}100)</h3>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart
           data={chartData}
@@ -100,7 +103,7 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
             itemStyle={CHART_TOOLTIP_ITEM_STYLE}
             labelStyle={CHART_TOOLTIP_LABEL_STYLE}
             labelFormatter={formatFullDate}
-            formatter={(value: number, name: string) => [`$${value.toFixed(2)}`, name]}
+            formatter={(value: number, name: string) => [`${currencySymbol}${value.toFixed(2)}`, name]}
           />
           <Legend
             onMouseEnter={(e) => onPortfolioHover?.(e.dataKey as string)}

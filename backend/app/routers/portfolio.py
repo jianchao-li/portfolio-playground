@@ -10,8 +10,15 @@ from app.models.portfolio import (
     PerformanceData,
 )
 from app.services.analyzer import PortfolioAnalyzer
+from app.services.currency import get_currency_list
 
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
+
+
+@router.get("/currencies")
+async def get_currencies():
+    """Return list of supported currencies."""
+    return get_currency_list()
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
@@ -25,9 +32,10 @@ async def analyze_portfolio(request: AnalysisRequest):
         stats, performance = analyzer.analyze(
             portfolio=request.portfolio,
             start_date=request.start_date,
-            end_date=request.end_date
+            end_date=request.end_date,
+            currency=request.currency
         )
-        return AnalysisResponse(stats=stats, performance=performance)
+        return AnalysisResponse(stats=stats, performance=performance, currency=request.currency)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -50,11 +58,13 @@ async def compare_portfolios(request: ComparisonRequest):
             stats, performance = analyzer.analyze(
                 portfolio=portfolio,
                 start_date=request.start_date,
-                end_date=request.end_date
+                end_date=request.end_date,
+                currency=request.currency
             )
             results.append({
                 "stats": stats,
-                "performance": performance
+                "performance": performance,
+                "currency": request.currency
             })
 
         return {"portfolios": results}

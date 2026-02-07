@@ -4,7 +4,8 @@ import numpy as np
 from datetime import date, timedelta
 from functools import lru_cache
 
-from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData
+from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData, CurrencyCode
+from app.services.currency import CurrencyService
 
 
 class PortfolioAnalyzer:
@@ -12,6 +13,7 @@ class PortfolioAnalyzer:
 
     def __init__(self, risk_free_rate: float = 0.05):
         self.risk_free_rate = risk_free_rate
+        self.currency_service = CurrencyService()
 
     def fetch_prices(self, symbols: list[str], start_date: date, end_date: date) -> pd.DataFrame:
         """Fetch adjusted close prices for given symbols."""
@@ -99,10 +101,17 @@ class PortfolioAnalyzer:
             max_drawdown=round(max_drawdown, 4)
         )
 
-    def analyze(self, portfolio: Portfolio, start_date: date, end_date: date) -> tuple[PortfolioStats, PerformanceData]:
+    def analyze(self, portfolio: Portfolio, start_date: date, end_date: date, currency: CurrencyCode = "USD") -> tuple[PortfolioStats, PerformanceData]:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
         prices = self.fetch_prices(symbols, start_date, end_date)
+
+        # Apply currency conversion BEFORE normalization
+        if currency != "USD":
+            exchange_rates = self.currency_service.fetch_exchange_rates(
+                currency, start_date, end_date
+            )
+            prices = self.currency_service.apply_conversion(prices, exchange_rates)
 
         portfolio_values = self.calculate_portfolio_values(portfolio, prices)
         stats = self.calculate_stats(portfolio_values, portfolio.name)
