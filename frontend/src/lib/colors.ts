@@ -1,5 +1,16 @@
 export const PORTFOLIO_COLORS = [
-  '#3ecfb2', '#e74c3c', '#9b59b6', '#f39c12', '#3498db', '#1abc9c', '#e91e63'
+  '#3ecfb2', // teal
+  '#e74c3c', // red
+  '#9b59b6', // purple
+  '#f39c12', // orange
+  '#3498db', // blue
+  '#1abc9c', // green
+  '#e91e63', // pink
+  '#795548', // brown
+  '#607d8b', // blue-grey
+  '#ff5722', // deep orange
+  '#00bcd4', // cyan
+  '#8bc34a', // light green
 ];
 
 export const PIE_CHART_COLORS = [

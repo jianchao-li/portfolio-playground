@@ -6,6 +6,7 @@ import PortfolioPopover from '@/components/PortfolioPopover';
 import PerformanceChart from '@/components/PerformanceChart';
 import StatsTable from '@/components/StatsTable';
 import { Asset, PortfolioStats, PerformanceData, analyzePortfolio } from '@/lib/api';
+import { getPortfolioColor } from '@/lib/colors';
 
 // Preset portfolios for quick comparison
 const PRESET_PORTFOLIOS = [
@@ -162,29 +163,33 @@ export default function Home() {
           <div className="controls-divider" />
 
           <div className="portfolio-chips">
-            {results.map((r) => (
-              <div
-                key={r.name}
-                className="portfolio-chip-wrapper"
-                onMouseEnter={() => setOpenPopover(r.name)}
-                onMouseLeave={() => setOpenPopover(null)}
-              >
+            {results.map((r, index) => {
+              const color = getPortfolioColor(index);
+              return (
                 <div
-                  className={`portfolio-chip clickable ${openPopover === r.name ? 'active' : ''}`}
+                  key={r.name}
+                  className="portfolio-chip-wrapper"
+                  onMouseEnter={() => setOpenPopover(r.name)}
+                  onMouseLeave={() => setOpenPopover(null)}
                 >
-                  <span>{r.name}</span>
+                  <div
+                    className={`portfolio-chip clickable ${openPopover === r.name ? 'active' : ''}`}
+                    style={{ borderColor: color, color: color }}
+                  >
+                    <span>{r.name}</span>
+                  </div>
+                  {openPopover === r.name && (
+                    <PortfolioPopover
+                      name={r.name}
+                      assets={r.assets}
+                      onEdit={() => handleEditClick(r)}
+                      onRemove={() => removePortfolio(r.name)}
+                      onClose={() => setOpenPopover(null)}
+                    />
+                  )}
                 </div>
-                {openPopover === r.name && (
-                  <PortfolioPopover
-                    name={r.name}
-                    assets={r.assets}
-                    onEdit={() => handleEditClick(r)}
-                    onRemove={() => removePortfolio(r.name)}
-                    onClose={() => setOpenPopover(null)}
-                  />
-                )}
-              </div>
-            ))}
+              );
+            })}
             {results.length === 0 && (
               <span className="no-portfolios-hint">No portfolios selected</span>
             )}
@@ -195,13 +200,16 @@ export default function Home() {
         <div className="controls-row-2">
           <div className="preset-chips">
             {PRESET_PORTFOLIOS.map((preset) => {
-              const isAdded = results.some((r) => r.name === preset.name);
+              const resultIndex = results.findIndex((r) => r.name === preset.name);
+              const isAdded = resultIndex !== -1;
+              const color = isAdded ? getPortfolioColor(resultIndex) : undefined;
               return (
                 <button
                   key={preset.name}
                   onClick={() => isAdded ? removePortfolio(preset.name) : addPreset(preset)}
                   disabled={loading}
                   className={`preset-chip ${isAdded ? 'added' : ''}`}
+                  style={isAdded ? { borderColor: color, color: color } : undefined}
                 >
                   {isAdded ? '✓' : '+'} {preset.name}
                 </button>
