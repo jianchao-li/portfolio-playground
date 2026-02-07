@@ -81,7 +81,6 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
                 strokeWidth={isHighlighted ? 3 : 2}
                 strokeOpacity={isDimmed ? 0.25 : 1}
                 style={{ transition: 'stroke-width 200ms, stroke-opacity 200ms' }}
-                onMouseEnter={() => onPortfolioHover?.(portfolio.name)}
               />
             );
           })}
