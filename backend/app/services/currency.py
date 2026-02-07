@@ -3,16 +3,18 @@ import pandas as pd
 from datetime import date, timedelta
 from typing import Literal, Optional
 
-CurrencyCode = Literal["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD"]
+CurrencyCode = Literal["USD", "EUR", "GBP", "CNY", "JPY", "CHF", "CAD", "AUD", "SGD"]
 
 SUPPORTED_CURRENCIES = {
-    "USD": {"symbol": "$", "name": "US Dollar", "ticker": None},
-    "EUR": {"symbol": "€", "name": "Euro", "ticker": "EURUSD=X"},
-    "GBP": {"symbol": "£", "name": "British Pound", "ticker": "GBPUSD=X"},
-    "JPY": {"symbol": "¥", "name": "Japanese Yen", "ticker": "JPY=X"},
-    "CHF": {"symbol": "Fr", "name": "Swiss Franc", "ticker": "CHF=X"},
-    "CAD": {"symbol": "C$", "name": "Canadian Dollar", "ticker": "CAD=X"},
-    "AUD": {"symbol": "A$", "name": "Australian Dollar", "ticker": "AUDUSD=X"},
+    "USD": {"name": "US Dollar", "ticker": None},
+    "EUR": {"name": "Euro", "ticker": "EURUSD=X"},
+    "GBP": {"name": "British Pound", "ticker": "GBPUSD=X"},
+    "CNY": {"name": "Chinese Yuan", "ticker": "CNY=X"},
+    "JPY": {"name": "Japanese Yen", "ticker": "JPY=X"},
+    "CHF": {"name": "Swiss Franc", "ticker": "CHF=X"},
+    "CAD": {"name": "Canadian Dollar", "ticker": "CAD=X"},
+    "AUD": {"name": "Australian Dollar", "ticker": "AUDUSD=X"},
+    "SGD": {"name": "Singapore Dollar", "ticker": "SGD=X"},
 }
 
 # Currencies where the quote is XXX/USD (value is how many USD per 1 unit of currency)
@@ -102,6 +104,6 @@ class CurrencyService:
 def get_currency_list() -> list[dict]:
     """Return list of supported currencies for API response."""
     return [
-        {"code": code, "symbol": info["symbol"], "name": info["name"]}
+        {"code": code, "name": info["name"]}
         for code, info in SUPPORTED_CURRENCIES.items()
     ]

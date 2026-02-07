@@ -187,7 +187,10 @@ header p {
   font-weight: 500;
 }
 
-.currency-selector select {
+.currency-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
   border: 1px solid var(--border);
@@ -197,18 +200,127 @@ header p {
   font-family: inherit;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
-  min-width: 180px;
+  min-width: 120px;
 }
 
-.currency-selector select:focus {
+.currency-trigger:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(62, 207, 178, 0.2);
 }
 
-.currency-selector select:disabled {
+.currency-trigger:disabled,
+.currency-trigger.disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.currency-trigger-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.currency-trigger-code {
+  font-weight: 600;
+}
+
+.currency-trigger-arrow {
+  margin-left: auto;
+  font-size: 0.6rem;
+  color: var(--fg-secondary);
+}
+
+.currency-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 260px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-hover);
+  z-index: 1000;
+}
+
+.currency-search-wrapper {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.currency-search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-solid);
+  color: var(--fg);
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.currency-search:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(62, 207, 178, 0.2);
+}
+
+.currency-options {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.currency-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.currency-option:hover,
+.currency-option.highlighted {
+  background: rgba(62, 207, 178, 0.15);
+}
+
+.currency-option.selected {
+  background: rgba(62, 207, 178, 0.08);
+}
+
+.currency-option-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.currency-option-code {
+  font-weight: 600;
+  color: var(--fg);
+  flex-shrink: 0;
+}
+
+.currency-option-name {
+  color: var(--fg-secondary);
+  font-size: 0.85rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.currency-option-check {
+  color: var(--primary-dark);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.currency-no-results {
+  padding: 1rem;
+  text-align: center;
+  color: var(--fg-secondary);
+  font-size: 0.85rem;
 }
 
 .add-custom-btn {

@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { PerformanceData, CurrencyCode, CURRENCY_SYMBOLS } from '@/lib/api';
+import { PerformanceData, CurrencyCode, CURRENCY_NAMES } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 import { CHART_TOOLTIP_STYLE, CHART_TOOLTIP_ITEM_STYLE, CHART_TOOLTIP_LABEL_STYLE, CHART_AXIS_STYLE } from '@/lib/theme';
 import { getHighlightState } from '@/lib/utils';
@@ -31,11 +31,11 @@ function formatFullDate(dateStr: string): string {
 interface ChartInfoTooltipProps {
   isOpen: boolean;
   onToggle: () => void;
-  currencySymbol: string;
+  currencyName: string;
 }
 
-function ChartInfoTooltip({ isOpen, onToggle, currencySymbol }: ChartInfoTooltipProps) {
-  const isUSD = currencySymbol === '$';
+function ChartInfoTooltip({ isOpen, onToggle, currencyName }: ChartInfoTooltipProps) {
+  const isUSD = currencyName === 'US Dollar';
   return (
     <span className="info-tooltip-wrapper">
       <button
@@ -60,7 +60,7 @@ function ChartInfoTooltip({ isOpen, onToggle, currencySymbol }: ChartInfoTooltip
               </p>
             ) : (
               <p>
-                Each portfolio starts with a $100 USD investment, converted to {currencySymbol} at the starting exchange rate. Dividends are reinvested.
+                Each portfolio starts with a $100 USD investment, converted to {currencyName} at the starting exchange rate. Dividends are reinvested.
                 The curve shows combined asset performance and currency movement over time.
               </p>
             )}
@@ -79,7 +79,8 @@ interface PerformanceChartProps {
 }
 
 export default function PerformanceChart({ data, highlightedPortfolio, onPortfolioHover, currency = 'USD' }: PerformanceChartProps) {
-  const currencySymbol = CURRENCY_SYMBOLS[currency] || '$';
+  const currencyName = CURRENCY_NAMES[currency] || 'US Dollar';
+  const currencyCode = currency;
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
 
   // Memoize chart data transformation - must be called before any early returns
@@ -124,7 +125,7 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
           <ChartInfoTooltip
             isOpen={showInfoTooltip}
             onToggle={() => setShowInfoTooltip(!showInfoTooltip)}
-            currencySymbol={currencySymbol}
+            currencyName={currencyName}
           />
         </h3>
         <div className="chart-empty">
@@ -141,7 +142,7 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
         <ChartInfoTooltip
           isOpen={showInfoTooltip}
           onToggle={() => setShowInfoTooltip(!showInfoTooltip)}
-          currencySymbol={currencySymbol}
+          currencyName={currencyName}
         />
       </h3>
       <ResponsiveContainer width="100%" height={400}>
@@ -165,7 +166,7 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
             itemStyle={CHART_TOOLTIP_ITEM_STYLE}
             labelStyle={CHART_TOOLTIP_LABEL_STYLE}
             labelFormatter={formatFullDate}
-            formatter={(value: number, name: string) => [`${currencySymbol}${value.toFixed(2)}`, name]}
+            formatter={(value: number, name: string) => [`${value.toFixed(2)} ${currencyCode}`, name]}
           />
           <Legend
             onMouseEnter={(e) => onPortfolioHover?.(e.dataKey as string)}

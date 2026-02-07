@@ -1,31 +1,35 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CHF' | 'CAD' | 'AUD';
+export type CurrencyCode = 'AUD' | 'CAD' | 'CHF' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'SGD' | 'USD';
 
 export interface CurrencyInfo {
   code: CurrencyCode;
-  symbol: string;
   name: string;
+  flag: string;
 }
 
 export const CURRENCIES: CurrencyInfo[] = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'AUD', name: 'Australian Dollar', flag: '🇦🇺' },
+  { code: 'CAD', name: 'Canadian Dollar', flag: '🇨🇦' },
+  { code: 'CHF', name: 'Swiss Franc', flag: '🇨🇭' },
+  { code: 'CNY', name: 'Chinese Yuan', flag: '🇨🇳' },
+  { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
+  { code: 'GBP', name: 'British Pound', flag: '🇬🇧' },
+  { code: 'JPY', name: 'Japanese Yen', flag: '🇯🇵' },
+  { code: 'SGD', name: 'Singapore Dollar', flag: '🇸🇬' },
+  { code: 'USD', name: 'US Dollar', flag: '🇺🇸' },
 ];
 
-export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  JPY: '¥',
-  CHF: 'Fr',
-  CAD: 'C$',
-  AUD: 'A$',
+export const CURRENCY_NAMES: Record<CurrencyCode, string> = {
+  AUD: 'Australian Dollar',
+  CAD: 'Canadian Dollar',
+  CHF: 'Swiss Franc',
+  CNY: 'Chinese Yuan',
+  EUR: 'Euro',
+  GBP: 'British Pound',
+  JPY: 'Japanese Yen',
+  SGD: 'Singapore Dollar',
+  USD: 'US Dollar',
 };
 
 export interface Asset {

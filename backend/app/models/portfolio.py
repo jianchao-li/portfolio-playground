@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal
 from datetime import date
 
-CurrencyCode = Literal["USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD"]
+CurrencyCode = Literal["USD", "EUR", "GBP", "CNY", "JPY", "CHF", "CAD", "AUD", "SGD"]
 
 
 class Asset(BaseModel):
