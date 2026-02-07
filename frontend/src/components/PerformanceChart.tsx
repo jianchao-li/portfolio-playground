@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -28,6 +28,42 @@ function formatFullDate(dateStr: string): string {
   return `${MONTH_NAMES[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`;
 }
 
+interface ChartInfoTooltipProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  currencySymbol: string;
+}
+
+function ChartInfoTooltip({ isOpen, onToggle, currencySymbol }: ChartInfoTooltipProps) {
+  return (
+    <span className="info-tooltip-wrapper">
+      <button
+        type="button"
+        className="info-icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        aria-label="How this chart works"
+      >
+        &#9432;
+      </button>
+      {isOpen && (
+        <div className="info-tooltip chart-info-tooltip">
+          <div className="info-tooltip-content">
+            <strong>How this chart works</strong>
+            <p>
+              Each portfolio starts at {currencySymbol}100 on the first day.
+              The curve shows how that initial investment would have grown (or shrunk) over time.
+              This makes it easy to compare portfolios with different asset prices.
+            </p>
+          </div>
+        </div>
+      )}
+    </span>
+  );
+}
+
 interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
   highlightedPortfolio?: string | null;
@@ -37,11 +73,19 @@ interface PerformanceChartProps {
 
 export default function PerformanceChart({ data, highlightedPortfolio, onPortfolioHover, currency = 'USD' }: PerformanceChartProps) {
   const currencySymbol = CURRENCY_SYMBOLS[currency] || '$';
+  const [showInfoTooltip, setShowInfoTooltip] = useState(false);
 
   if (!data.length || !data[0]?.performance?.dates?.length) {
     return (
-      <div className="chart-container">
-        <h3>Portfolio Performance (Normalized to {currencySymbol}100)</h3>
+      <div className="chart-container" onClick={() => setShowInfoTooltip(false)}>
+        <h3>
+          Portfolio Performance
+          <ChartInfoTooltip
+            isOpen={showInfoTooltip}
+            onToggle={() => setShowInfoTooltip(!showInfoTooltip)}
+            currencySymbol={currencySymbol}
+          />
+        </h3>
         <div className="chart-empty">
           <p>Select portfolios to compare performance</p>
         </div>
@@ -80,8 +124,15 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
   const ticks = tickIndices.map(i => chartData[i]?.date).filter(Boolean);
 
   return (
-    <div className="chart-container">
-      <h3>Portfolio Performance (Normalized to {currencySymbol}100)</h3>
+    <div className="chart-container" onClick={() => setShowInfoTooltip(false)}>
+      <h3>
+        Portfolio Performance
+        <ChartInfoTooltip
+          isOpen={showInfoTooltip}
+          onToggle={() => setShowInfoTooltip(!showInfoTooltip)}
+          currencySymbol={currencySymbol}
+        />
+      </h3>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart
           data={chartData}

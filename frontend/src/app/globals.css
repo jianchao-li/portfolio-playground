@@ -601,6 +601,13 @@ input[type="date"]:focus {
   margin: 0;
 }
 
+/* Chart info tooltip - left aligned for header position */
+.chart-info-tooltip {
+  left: 0;
+  transform: none;
+  max-width: 320px;
+}
+
 .error-message {
   background: rgba(231, 76, 60, 0.15);
   color: var(--danger);
