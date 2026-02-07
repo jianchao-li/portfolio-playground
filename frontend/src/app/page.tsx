@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import PortfolioBuilder from '@/components/PortfolioBuilder';
 import PortfolioPopover from '@/components/PortfolioPopover';
-import PerformanceChart from '@/components/PerformanceChart';
-import StatsTable from '@/components/StatsTable';
+import { ChartSkeleton, TableSkeleton } from '@/components/LoadingSkeletons';
 import { Asset, PortfolioStats, PerformanceData, analyzePortfolio } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
+
+// Lazy load heavy chart components
+const PerformanceChart = lazy(() => import('@/components/PerformanceChart'));
+const StatsTable = lazy(() => import('@/components/StatsTable'));
 
 // Preset portfolios for quick comparison
 const PRESET_PORTFOLIOS = [
@@ -230,19 +233,23 @@ export default function Home() {
 
       {/* Full Width Results */}
       <div className="results-full">
-        <PerformanceChart
-          data={results.map((r) => ({
-            name: r.name,
-            performance: r.performance,
-          }))}
-          highlightedPortfolio={highlightedPortfolio}
-          onPortfolioHover={setHighlightedPortfolio}
-        />
-        <StatsTable
-          stats={results.map((r) => r.stats)}
-          highlightedPortfolio={highlightedPortfolio}
-          onPortfolioHover={setHighlightedPortfolio}
-        />
+        <Suspense fallback={<ChartSkeleton />}>
+          <PerformanceChart
+            data={results.map((r) => ({
+              name: r.name,
+              performance: r.performance,
+            }))}
+            highlightedPortfolio={highlightedPortfolio}
+            onPortfolioHover={setHighlightedPortfolio}
+          />
+        </Suspense>
+        <Suspense fallback={<TableSkeleton />}>
+          <StatsTable
+            stats={results.map((r) => r.stats)}
+            highlightedPortfolio={highlightedPortfolio}
+            onPortfolioHover={setHighlightedPortfolio}
+          />
+        </Suspense>
       </div>
 
       {/* Modal for Custom/Edit Portfolio */}

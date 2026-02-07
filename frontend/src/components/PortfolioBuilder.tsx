@@ -110,7 +110,7 @@ export default function PortfolioBuilder({
       </div>
 
       <button type="submit" disabled={!isValid || loading} className="submit-btn">
-        {loading ? 'Analyzing...' : (submitLabel || 'Analyze Portfolio')}
+        {loading ? 'Adding...' : (submitLabel || 'Add Portfolio')}
       </button>
     </form>
   );
