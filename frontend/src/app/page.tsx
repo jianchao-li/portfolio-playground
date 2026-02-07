@@ -14,14 +14,6 @@ const StatsTable = lazy(() => import('@/components/StatsTable'));
 // Preset portfolios for quick comparison
 const PRESET_PORTFOLIOS = [
   {
-    name: 'Three-Fund Portfolio',
-    assets: [
-      { symbol: 'VTI', weight: 0.6 },
-      { symbol: 'VXUS', weight: 0.2 },
-      { symbol: 'BND', weight: 0.2 },
-    ] as Asset[],
-  },
-  {
     name: 'S&P 500',
     assets: [{ symbol: 'VTI', weight: 1.0 }] as Asset[],
   },
@@ -135,12 +127,32 @@ export default function Home() {
     setEditingPortfolio(portfolio);
   };
 
-  // Auto-load Three-Fund Portfolio on mount
+  // Auto-load all preset portfolios on mount
   useEffect(() => {
     if (!hasLoadedInitial.current) {
       hasLoadedInitial.current = true;
-      const threeFund = PRESET_PORTFOLIOS[0]; // Three-Fund Portfolio is first
-      handleAnalyze(threeFund.name, threeFund.assets);
+      const loadAllPresets = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const allResults = await Promise.all(
+            PRESET_PORTFOLIOS.map(async (preset) => {
+              const response = await analyzePortfolio(
+                { name: preset.name, assets: preset.assets },
+                startDate,
+                endDate
+              );
+              return { name: preset.name, assets: preset.assets, ...response };
+            })
+          );
+          setResults(allResults);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load portfolios');
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadAllPresets();
     }
   }, []);
 
