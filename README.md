@@ -5,10 +5,10 @@ A web application for analyzing and comparing investment portfolio performance. 
 ## Features
 
 - **Portfolio builder** -- Create custom portfolios by searching for ticker symbols and assigning weights. Includes autocomplete search powered by Yahoo Finance.
-- **Preset portfolios** -- Quickly add common benchmarks: S&P 500 (VTI), NASDAQ 100 (QQQ), Developed Markets (VEA), Emerging Markets (VWO), Gold (GLD), Bitcoin (IBIT), and Volatility (VIXY).
+- **Preset portfolios** -- Quickly add common benchmarks: S&P 500 (VOO), NASDAQ 100 (QQQ), Developed Markets (VEA), Emerging Markets (VWO), Gold (GLD), Bitcoin (IBIT), and Volatility (VIXY).
 - **Performance chart** -- Compare portfolios on a normalized $100-start line chart over a configurable date range.
 - **Statistics table** -- Side-by-side comparison of Total Return, Annualized Return, Volatility, Sharpe Ratio, and Max Drawdown, with tooltips explaining each metric.
-- **Multi-currency support** -- View results in USD, EUR, GBP, JPY, CHF, CAD, or AUD using real-time exchange rates.
+- **Multi-currency support** -- View results in USD, EUR, GBP, CNY, JPY, CHF, CAD, AUD, or SGD using real-time exchange rates.
 - **Asset allocation view** -- Hover over any portfolio to see a pie chart breakdown of its holdings.
 
 ## Architecture
