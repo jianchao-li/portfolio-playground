@@ -16,7 +16,7 @@ const StatsTable = lazy(() => import('@/components/StatsTable'));
 const PRESET_PORTFOLIOS = [
   {
     name: 'S&P 500',
-    assets: [{ symbol: 'VTI', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'VOO', weight: 1.0 }] as Asset[],
   },
   {
     name: 'NASDAQ 100',

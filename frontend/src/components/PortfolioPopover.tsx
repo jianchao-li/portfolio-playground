@@ -43,11 +43,11 @@ export default function PortfolioPopover({
                 cy="50%"
                 innerRadius={30}
                 outerRadius={50}
-                paddingAngle={2}
+                paddingAngle={chartData.length > 1 ? 2 : 0}
                 dataKey="value"
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${entry.name}-${index}`} fill={entry.color} />
+                  <Cell key={`cell-${entry.name}-${index}`} fill={entry.color} stroke={chartData.length > 1 ? undefined : 'none'} />
                 ))}
               </Pie>
               <Tooltip
