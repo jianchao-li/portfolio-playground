@@ -1,7 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 
 from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData, CurrencyCode
@@ -11,9 +11,35 @@ from app.services.currency import CurrencyService
 class PortfolioAnalyzer:
     TRADING_DAYS_PER_YEAR = 252
 
-    def __init__(self, risk_free_rate: float = 0.05):
-        self.risk_free_rate = risk_free_rate
+    def __init__(self):
         self.currency_service = CurrencyService()
+        self._cached_rf_rate: float | None = None
+        self._rf_cache_time: datetime | None = None
+
+    def fetch_risk_free_rate(self) -> float:
+        """Fetch current 3-month T-bill rate from Yahoo Finance."""
+        try:
+            data = yf.download('^IRX', period='5d', progress=False)
+            if len(data) > 0:
+                # ^IRX returns rate as percentage (e.g., 3.59 = 3.59%)
+                rate = data['Close'].iloc[-1]
+                if hasattr(rate, 'item'):
+                    rate = rate.item()
+                return rate / 100  # Convert to decimal
+        except Exception:
+            pass
+        return 0.05  # Fallback to 5% if fetch fails
+
+    @property
+    def risk_free_rate(self) -> float:
+        """Get risk-free rate with 1-hour cache."""
+        now = datetime.now()
+        if self._cached_rf_rate is None or \
+           self._rf_cache_time is None or \
+           (now - self._rf_cache_time).seconds > 3600:
+            self._cached_rf_rate = self.fetch_risk_free_rate()
+            self._rf_cache_time = now
+        return self._cached_rf_rate
 
     def fetch_prices(self, symbols: list[str], start_date: date, end_date: date) -> pd.DataFrame:
         """Fetch adjusted close prices for given symbols."""
@@ -85,7 +111,7 @@ class PortfolioAnalyzer:
         # Sharpe ratio
         daily_rf = self.risk_free_rate / self.TRADING_DAYS_PER_YEAR
         excess_returns = daily_returns - daily_rf
-        sharpe_ratio = (excess_returns.mean() / daily_returns.std()) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
+        sharpe_ratio = (excess_returns.mean() / excess_returns.std()) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
 
         # Max drawdown
         rolling_max = portfolio_values.cummax()

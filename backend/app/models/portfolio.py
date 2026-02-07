@@ -23,7 +23,6 @@ class AnalysisRequest(BaseModel):
     portfolio: Portfolio
     start_date: date
     end_date: date
-    risk_free_rate: float = Field(default=0.05, description="Annual risk-free rate for Sharpe ratio")
     currency: CurrencyCode = Field(default="USD", description="Currency for portfolio values")
 
 
@@ -31,7 +30,6 @@ class ComparisonRequest(BaseModel):
     portfolios: list[Portfolio] = Field(..., min_length=2, description="Portfolios to compare")
     start_date: date
     end_date: date
-    risk_free_rate: float = Field(default=0.05)
     currency: CurrencyCode = Field(default="USD", description="Currency for portfolio values")
 
 

@@ -82,6 +82,40 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
   const currencySymbol = CURRENCY_SYMBOLS[currency] || '$';
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
 
+  // Memoize chart data transformation - must be called before any early returns
+  const chartData = useMemo(() => {
+    if (!data.length || !data[0]?.performance?.dates?.length) {
+      return [];
+    }
+    return data[0].performance.dates.map((date, i) => {
+      const point: Record<string, string | number> = { date };
+      data.forEach((portfolio) => {
+        point[portfolio.name] = portfolio.performance.values[i];
+      });
+      return point;
+    });
+  }, [data]);
+
+  // Calculate tick indices for 5-7 evenly spaced labels
+  const tickIndices = useMemo(() => {
+    const totalPoints = chartData.length;
+    if (totalPoints === 0) return [];
+    const targetTicks = Math.min(6, Math.max(3, Math.floor(totalPoints / 60)));
+    const step = Math.floor(totalPoints / targetTicks);
+    const indices: number[] = [];
+
+    for (let i = 0; i < totalPoints; i += step) {
+      indices.push(i);
+    }
+    // Always include the last point
+    if (indices[indices.length - 1] !== totalPoints - 1) {
+      indices.push(totalPoints - 1);
+    }
+    return indices;
+  }, [chartData.length]);
+
+  const ticks = tickIndices.map(i => chartData[i]?.date).filter(Boolean);
+
   if (!data.length || !data[0]?.performance?.dates?.length) {
     return (
       <div className="chart-container" onClick={() => setShowInfoTooltip(false)}>
@@ -99,36 +133,6 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
       </div>
     );
   }
-
-  // Memoize chart data transformation
-  const chartData = useMemo(() => {
-    return data[0].performance.dates.map((date, i) => {
-      const point: Record<string, string | number> = { date };
-      data.forEach((portfolio) => {
-        point[portfolio.name] = portfolio.performance.values[i];
-      });
-      return point;
-    });
-  }, [data]);
-
-  // Calculate tick indices for 5-7 evenly spaced labels
-  const tickIndices = useMemo(() => {
-    const totalPoints = chartData.length;
-    const targetTicks = Math.min(6, Math.max(3, Math.floor(totalPoints / 60)));
-    const step = Math.floor(totalPoints / targetTicks);
-    const indices: number[] = [];
-
-    for (let i = 0; i < totalPoints; i += step) {
-      indices.push(i);
-    }
-    // Always include the last point
-    if (indices[indices.length - 1] !== totalPoints - 1) {
-      indices.push(totalPoints - 1);
-    }
-    return indices;
-  }, [chartData.length]);
-
-  const ticks = tickIndices.map(i => chartData[i]?.date).filter(Boolean);
 
   return (
     <div className="chart-container" onClick={() => setShowInfoTooltip(false)}>

@@ -28,7 +28,7 @@ async def analyze_portfolio(request: AnalysisRequest):
         raise HTTPException(status_code=400, detail="Portfolio weights must sum to 1.0")
 
     try:
-        analyzer = PortfolioAnalyzer(risk_free_rate=request.risk_free_rate)
+        analyzer = PortfolioAnalyzer()
         stats, performance = analyzer.analyze(
             portfolio=request.portfolio,
             start_date=request.start_date,
@@ -51,7 +51,7 @@ async def compare_portfolios(request: ComparisonRequest):
             )
 
     try:
-        analyzer = PortfolioAnalyzer(risk_free_rate=request.risk_free_rate)
+        analyzer = PortfolioAnalyzer()
         results = []
 
         for portfolio in request.portfolios:
