@@ -33,6 +33,7 @@ class PortfolioAnalyzer:
                 rates = (rates / 100) / self.TRADING_DAYS_PER_YEAR
                 rates = rates.ffill().dropna()
                 rates = rates[rates.index >= pd.Timestamp(start_date)]
+                rates = rates[rates.index <= pd.Timestamp(end_date)]
                 return rates
         except Exception:
             pass
@@ -76,6 +77,7 @@ class PortfolioAnalyzer:
         # Forward fill missing data, then filter to requested range
         prices = prices.ffill().dropna()
         prices = prices[prices.index >= pd.Timestamp(start_date)]
+        prices = prices[prices.index <= pd.Timestamp(end_date)]
 
         return prices
 
@@ -118,7 +120,11 @@ class PortfolioAnalyzer:
             daily_rf = 0.05 / self.TRADING_DAYS_PER_YEAR
             excess_returns = daily_returns - daily_rf
 
-        sharpe_ratio = (excess_returns.mean() / excess_returns.std(ddof=1)) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
+        excess_std = excess_returns.std(ddof=1)
+        if excess_std == 0:
+            sharpe_ratio = 0.0
+        else:
+            sharpe_ratio = (excess_returns.mean() / excess_std) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
 
         # Max drawdown
         rolling_max = portfolio_values.cummax()

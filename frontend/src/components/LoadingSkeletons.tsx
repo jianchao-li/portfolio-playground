@@ -3,7 +3,7 @@
 export function ChartSkeleton() {
   return (
     <div className="chart-container">
-      <h3>Portfolio Performance (Normalized to $100)</h3>
+      <h3>Portfolio Performance</h3>
       <div className="skeleton-chart">
         <div className="skeleton-pulse" />
       </div>
@@ -23,14 +23,5 @@ export function TableSkeleton() {
         ))}
       </div>
     </div>
-  );
-}
-
-export function ResultsSkeleton() {
-  return (
-    <>
-      <ChartSkeleton />
-      <TableSkeleton />
-    </>
   );
 }

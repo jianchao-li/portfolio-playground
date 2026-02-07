@@ -27,7 +27,7 @@ class AnalysisRequest(BaseModel):
 
 
 class ComparisonRequest(BaseModel):
-    portfolios: list[Portfolio] = Field(..., min_length=2, description="Portfolios to compare")
+    portfolios: list[Portfolio] = Field(..., min_length=1, description="Portfolios to compare")
     start_date: date
     end_date: date
     currency: CurrencyCode = Field(default="USD", description="Currency for portfolio values")

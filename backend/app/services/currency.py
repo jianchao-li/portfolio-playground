@@ -72,6 +72,7 @@ class CurrencyService:
         # Forward fill missing data
         rates = rates.ffill().dropna()
         rates = rates[rates.index >= pd.Timestamp(start_date)]
+        rates = rates[rates.index <= pd.Timestamp(end_date)]
 
         if rates.empty:
             raise ValueError(f"No exchange rate data available for {currency} in the specified date range")
@@ -83,22 +84,6 @@ class CurrencyService:
             rates = 1 / rates
 
         return rates
-
-    def apply_conversion(
-        self, prices: pd.DataFrame, rates: Optional[pd.Series]
-    ) -> pd.DataFrame:
-        """
-        Apply exchange rate conversion to price data.
-        Multiplies prices by exchange rates for each matching date.
-        """
-        if rates is None:
-            return prices
-
-        # Align indices - forward fill, then backfill for any leading NaN
-        aligned_rates = rates.reindex(prices.index, method="ffill")
-        aligned_rates = aligned_rates.bfill()  # Handle case where prices start before rates
-
-        return prices.multiply(aligned_rates, axis=0)
 
 
 def get_currency_list() -> list[dict]:

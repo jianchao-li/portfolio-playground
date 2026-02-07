@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect, lazy, Suspense } from 'react';
+import { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
 import PortfolioBuilder from '@/components/PortfolioBuilder';
 import PortfolioPopover from '@/components/PortfolioPopover';
 import CurrencySelector from '@/components/CurrencySelector';
 import { ChartSkeleton, TableSkeleton } from '@/components/LoadingSkeletons';
-import { Asset, PortfolioStats, PerformanceData, analyzePortfolio, CurrencyCode } from '@/lib/api';
+import { Asset, PortfolioStats, PerformanceData, analyzePortfolio, comparePortfolios, CurrencyCode } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 
 // Lazy load heavy chart components
@@ -67,7 +67,7 @@ export default function Home() {
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioResult | null>(null);
   const [highlightedPortfolio, setHighlightedPortfolio] = useState<string | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
-  const portfolioCounter = useRef(0);
+  const portfolioCounter = useRef(1);
   const hasLoadedInitial = useRef(false);
   const resultsRef = useRef<PortfolioResult[]>([]);
 
@@ -97,7 +97,6 @@ export default function Home() {
         { name, assets },
         startDate,
         endDate,
-        0.05,
         currency
       );
 
@@ -140,18 +139,17 @@ export default function Home() {
         setLoading(true);
         setError(null);
         try {
-          const allResults = await Promise.all(
-            PRESET_PORTFOLIOS.map(async (preset) => {
-              const response = await analyzePortfolio(
-                { name: preset.name, assets: preset.assets },
-                startDate,
-                endDate,
-                0.05,
-                currency
-              );
-              return { name: preset.name, assets: preset.assets, ...response };
-            })
-          );
+          const portfolios = PRESET_PORTFOLIOS.map((p) => ({
+            name: p.name,
+            assets: p.assets,
+          }));
+          const response = await comparePortfolios(portfolios, startDate, endDate, currency);
+          const allResults = response.portfolios.map((r, i) => ({
+            name: PRESET_PORTFOLIOS[i].name,
+            assets: PRESET_PORTFOLIOS[i].assets,
+            stats: r.stats,
+            performance: r.performance,
+          }));
           setResults(allResults);
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to load portfolios');
@@ -175,18 +173,17 @@ export default function Home() {
       setError(null);
 
       try {
-        const refreshedResults = await Promise.all(
-          currentResults.map(async (r) => {
-            const response = await analyzePortfolio(
-              { name: r.name, assets: r.assets },
-              startDate,
-              endDate,
-              0.05,
-              currency
-            );
-            return { name: r.name, assets: r.assets, ...response };
-          })
-        );
+        const portfolios = currentResults.map((r) => ({
+          name: r.name,
+          assets: r.assets,
+        }));
+        const response = await comparePortfolios(portfolios, startDate, endDate, currency);
+        const refreshedResults = response.portfolios.map((r, i) => ({
+          name: currentResults[i].name,
+          assets: currentResults[i].assets,
+          stats: r.stats,
+          performance: r.performance,
+        }));
         setResults(refreshedResults);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to refresh data');
@@ -197,6 +194,13 @@ export default function Home() {
 
     refreshPortfolios();
   }, [startDate, endDate, currency]);
+
+  const chartData = useMemo(() => results.map((r) => ({
+    name: r.name,
+    performance: r.performance,
+  })), [results]);
+
+  const statsData = useMemo(() => results.map((r) => r.stats), [results]);
 
   return (
     <div className="container">
@@ -251,6 +255,13 @@ export default function Home() {
 
       {/* Portfolio Selector */}
       <div className="portfolio-selector">
+        <button
+          onClick={openAddModal}
+          className="add-custom-btn"
+        >
+          + Custom
+        </button>
+        <div className="portfolio-chips-right">
         {PRESET_PORTFOLIOS.map((preset) => {
           const resultIndex = results.findIndex((r) => r.name === preset.name);
           const isActive = resultIndex !== -1;
@@ -344,20 +355,14 @@ export default function Home() {
               </div>
             );
           })}
-
-        <button
-          onClick={openAddModal}
-          className="add-custom-btn"
-        >
-          + Custom
-        </button>
+        </div>
       </div>
 
       {/* Error Message */}
       {error && <div className="error-message">{error}</div>}
 
-      {/* Full Width Results */}
-      <div className="results-full" style={{ position: 'relative' }}>
+      {/* Portfolio Performance */}
+      <div className="results-card" style={{ position: 'relative' }}>
         {loading && results.length > 0 && (
           <div className="results-loading-overlay">
             <span className="results-loading-indicator">Loading…</span>
@@ -365,18 +370,19 @@ export default function Home() {
         )}
         <Suspense fallback={<ChartSkeleton />}>
           <PerformanceChart
-            data={results.map((r) => ({
-              name: r.name,
-              performance: r.performance,
-            }))}
+            data={chartData}
             highlightedPortfolio={highlightedPortfolio}
             onPortfolioHover={setHighlightedPortfolio}
             currency={currency}
           />
         </Suspense>
+      </div>
+
+      {/* Portfolio Statistics */}
+      <div className="results-card">
         <Suspense fallback={<TableSkeleton />}>
           <StatsTable
-            stats={results.map((r) => r.stats)}
+            stats={statsData}
             highlightedPortfolio={highlightedPortfolio}
             onPortfolioHover={setHighlightedPortfolio}
           />

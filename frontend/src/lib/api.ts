@@ -81,7 +81,6 @@ export async function analyzePortfolio(
   portfolio: Portfolio,
   startDate: string,
   endDate: string,
-  riskFreeRate: number = 0.05,
   currency: CurrencyCode = 'USD'
 ): Promise<AnalysisResponse> {
   return fetchFromAPI<AnalysisResponse>(
@@ -93,7 +92,6 @@ export async function analyzePortfolio(
         portfolio,
         start_date: startDate,
         end_date: endDate,
-        risk_free_rate: riskFreeRate,
         currency,
       }),
     },
@@ -105,7 +103,7 @@ export async function comparePortfolios(
   portfolios: Portfolio[],
   startDate: string,
   endDate: string,
-  riskFreeRate: number = 0.05
+  currency: CurrencyCode = 'USD'
 ): Promise<{ portfolios: AnalysisResponse[] }> {
   return fetchFromAPI<{ portfolios: AnalysisResponse[] }>(
     '/api/portfolio/compare',
@@ -116,7 +114,7 @@ export async function comparePortfolios(
         portfolios,
         start_date: startDate,
         end_date: endDate,
-        risk_free_rate: riskFreeRate,
+        currency,
       }),
     },
     'Failed to compare portfolios'
