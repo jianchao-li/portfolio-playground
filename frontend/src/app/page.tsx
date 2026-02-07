@@ -30,20 +30,20 @@ const PRESET_PORTFOLIOS = [
     assets: [{ symbol: 'QQQ', weight: 1.0 }] as Asset[],
   },
   {
-    name: 'Gold',
-    assets: [{ symbol: 'GLD', weight: 1.0 }] as Asset[],
-  },
-  {
-    name: 'Bitcoin',
-    assets: [{ symbol: 'IBIT', weight: 1.0 }] as Asset[],
-  },
-  {
     name: 'Developed Markets ex-US',
     assets: [{ symbol: 'VEA', weight: 1.0 }] as Asset[],
   },
   {
     name: 'Emerging Markets',
     assets: [{ symbol: 'VWO', weight: 1.0 }] as Asset[],
+  },
+  {
+    name: 'Gold',
+    assets: [{ symbol: 'GLD', weight: 1.0 }] as Asset[],
+  },
+  {
+    name: 'Bitcoin',
+    assets: [{ symbol: 'IBIT', weight: 1.0 }] as Asset[],
   },
   {
     name: 'VIX (Volatility)',
