@@ -431,7 +431,13 @@ input[type="date"]:focus {
 }
 
 .chart-container {
-  margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card-bg);
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
 }
 
 .chart-container h3 {
