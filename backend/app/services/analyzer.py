@@ -106,14 +106,17 @@ class PortfolioAnalyzer:
         symbols = [asset.symbol for asset in portfolio.assets]
         prices = self.fetch_prices(symbols, start_date, end_date)
 
-        # Apply currency conversion BEFORE normalization
+        # Normalize to $100 USD first
+        portfolio_values = self.calculate_portfolio_values(portfolio, prices)
+
+        # Then convert to target currency (captures both asset returns + currency movement)
         if currency != "USD":
             exchange_rates = self.currency_service.fetch_exchange_rates(
                 currency, start_date, end_date
             )
-            prices = self.currency_service.apply_conversion(prices, exchange_rates)
+            aligned_rates = exchange_rates.reindex(portfolio_values.index, method="ffill").bfill()
+            portfolio_values = portfolio_values * aligned_rates
 
-        portfolio_values = self.calculate_portfolio_values(portfolio, prices)
         stats = self.calculate_stats(portfolio_values, portfolio.name)
 
         performance = PerformanceData(

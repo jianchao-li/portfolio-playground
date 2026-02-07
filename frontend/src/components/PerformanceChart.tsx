@@ -35,6 +35,7 @@ interface ChartInfoTooltipProps {
 }
 
 function ChartInfoTooltip({ isOpen, onToggle, currencySymbol }: ChartInfoTooltipProps) {
+  const isUSD = currencySymbol === '$';
   return (
     <span className="info-tooltip-wrapper">
       <button
@@ -52,11 +53,17 @@ function ChartInfoTooltip({ isOpen, onToggle, currencySymbol }: ChartInfoTooltip
         <div className="info-tooltip chart-info-tooltip">
           <div className="info-tooltip-content">
             <strong>How this chart works</strong>
-            <p>
-              Each portfolio starts at {currencySymbol}100 on the first day.
-              The curve shows how that initial investment would have grown (or shrunk) over time.
-              This makes it easy to compare portfolios with different asset prices.
-            </p>
+            {isUSD ? (
+              <p>
+                Each portfolio starts at $100 on the first day.
+                The curve shows how that initial investment would have grown (or shrunk) over time.
+              </p>
+            ) : (
+              <p>
+                Each portfolio starts with a $100 USD investment, converted to {currencySymbol} at the starting exchange rate.
+                The curve shows combined asset performance and currency movement over time.
+              </p>
+            )}
           </div>
         </div>
       )}
