@@ -1,21 +1,36 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Asset } from '@/lib/api';
 import SymbolInput from './SymbolInput';
 
 interface PortfolioBuilderProps {
   onSubmit: (name: string, assets: Asset[]) => void;
   loading?: boolean;
+  initialName?: string;
+  initialAssets?: Asset[];
+  submitLabel?: string;
 }
 
-export default function PortfolioBuilder({ onSubmit, loading }: PortfolioBuilderProps) {
-  const [name, setName] = useState('Three-Fund Portfolio');
-  const [assets, setAssets] = useState<Asset[]>([
-    { symbol: 'VTI', weight: 0.6 },   // Total US Stock Market
-    { symbol: 'VXUS', weight: 0.2 },  // Total International Stock
-    { symbol: 'BND', weight: 0.2 },   // Total Bond Market
-  ]);
+const DEFAULT_ASSETS: Asset[] = [
+  { symbol: '', weight: 0 },
+];
+
+export default function PortfolioBuilder({
+  onSubmit,
+  loading,
+  initialName = '',
+  initialAssets,
+  submitLabel,
+}: PortfolioBuilderProps) {
+  const [name, setName] = useState(initialName);
+  const [assets, setAssets] = useState<Asset[]>(initialAssets || DEFAULT_ASSETS);
+
+  // Reset form when initial values change (for editing different portfolios)
+  useEffect(() => {
+    setName(initialName);
+    setAssets(initialAssets || DEFAULT_ASSETS);
+  }, [initialName, initialAssets]);
 
   const addAsset = () => {
     setAssets([...assets, { symbol: '', weight: 0 }]);
@@ -94,7 +109,7 @@ export default function PortfolioBuilder({ onSubmit, loading }: PortfolioBuilder
       </div>
 
       <button type="submit" disabled={!isValid || loading} className="submit-btn">
-        {loading ? 'Analyzing...' : 'Analyze Portfolio'}
+        {loading ? 'Analyzing...' : (submitLabel || 'Analyze Portfolio')}
       </button>
     </form>
   );

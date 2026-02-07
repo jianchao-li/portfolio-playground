@@ -53,15 +53,258 @@ header p {
 }
 
 .main-content {
-  display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 2rem;
+  display: block;
 }
 
 @media (max-width: 900px) {
   .main-content {
-    grid-template-columns: 1fr;
+    display: block;
   }
+}
+
+/* Controls Bar - Two Row Layout */
+.controls-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* Row 1: Date Range + Selected Portfolios */
+.controls-row-1 {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Row 2: Presets + Custom Button */
+.controls-row-2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Visual divider between date inputs and chips */
+.controls-divider {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .controls-bar {
+    padding: 0.75rem;
+  }
+
+  .controls-row-1 {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .controls-divider {
+    display: none;
+  }
+
+  .controls-row-2 {
+    flex-wrap: wrap;
+  }
+}
+
+.date-inputs {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-field label {
+  font-size: 0.75rem;
+  color: var(--fg-secondary);
+  font-weight: 500;
+}
+
+.date-field input {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* Portfolio Chips */
+.portfolio-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+}
+
+.no-portfolios-hint {
+  color: var(--fg-secondary);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.portfolio-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+}
+
+.portfolio-chip button {
+  background: none;
+  border: none;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.portfolio-chip button:hover {
+  color: var(--danger);
+}
+
+/* Preset Chips */
+.preset-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+  align-items: center;
+}
+
+.preset-chip {
+  background: var(--bg-solid);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--fg);
+}
+
+.preset-chip:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: rgba(62, 207, 178, 0.1);
+}
+
+.preset-chip.added {
+  background: rgba(62, 207, 178, 0.15);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.preset-chip:disabled {
+  cursor: default;
+}
+
+.add-custom-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.add-custom-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* Full Width Results */
+.results-full {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-close:hover {
+  color: var(--fg);
+}
+
+.modal-content .portfolio-builder {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* Portfolio Builder */
@@ -94,6 +337,7 @@ input[type="date"] {
   background: var(--bg-solid);
   color: var(--fg);
   font-size: 0.95rem;
+  font-family: inherit;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -267,6 +511,13 @@ input[type="date"]:focus {
   font-weight: 500;
 }
 
+.stats-table .empty-row {
+  text-align: center;
+  color: var(--fg-secondary);
+  font-style: italic;
+  padding: 2rem;
+}
+
 .stats-table .good {
   color: var(--success);
   font-weight: 500;
@@ -366,4 +617,315 @@ input[type="date"]:focus {
   color: var(--danger);
   font-size: 13px;
   text-align: center;
+}
+
+/* Portfolio List (portfolios being compared) */
+.portfolio-list {
+  background: var(--card-bg);
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+}
+
+.portfolio-list h3 {
+  font-size: 0.9rem;
+  color: var(--fg-secondary);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.portfolio-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-solid);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+}
+
+.portfolio-list-item:last-child {
+  margin-bottom: 0;
+}
+
+.portfolio-list-name {
+  font-weight: 500;
+  color: var(--fg);
+  font-size: 0.9rem;
+}
+
+.portfolio-list-remove {
+  background: transparent;
+  border: none;
+  color: var(--fg-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.portfolio-list-remove:hover {
+  color: var(--danger);
+}
+
+/* Preset Section */
+.preset-section {
+  background: var(--card-bg);
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 1rem;
+}
+
+.preset-section h3 {
+  font-size: 0.9rem;
+  color: var(--fg-secondary);
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.preset-btn {
+  background: var(--bg-solid);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.preset-btn:hover:not(:disabled) {
+  background: rgba(62, 207, 178, 0.1);
+  border-color: var(--primary);
+}
+
+.preset-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  background: rgba(62, 207, 178, 0.1);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+/* Builder Section */
+.builder-section {
+  margin-bottom: 1rem;
+}
+
+.builder-toggle {
+  width: 100%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 0;
+}
+
+.builder-toggle:hover {
+  background: var(--primary-dark);
+}
+
+.builder-section .portfolio-builder {
+  margin-top: 1rem;
+}
+
+/* Portfolio Chip Wrapper (for popover positioning) */
+.portfolio-chip-wrapper {
+  position: relative;
+}
+
+.portfolio-chip.clickable {
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.portfolio-chip.clickable:hover,
+.portfolio-chip.clickable.active {
+  border-color: var(--primary);
+  background: rgba(62, 207, 178, 0.1);
+}
+
+/* Portfolio Popover */
+.portfolio-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-hover);
+  min-width: 220px;
+  z-index: 100;
+}
+
+/* Invisible bridge to prevent popover from closing when moving mouse to it */
+.portfolio-popover::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  right: 0;
+  height: 12px;
+}
+
+.popover-arrow {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: var(--card-bg);
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.popover-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.popover-header h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.popover-content {
+  padding: 0.75rem 1rem;
+}
+
+.popover-chart {
+  margin-bottom: 0.5rem;
+}
+
+.popover-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-symbol {
+  font-weight: 600;
+  color: var(--fg);
+  flex: 1;
+}
+
+.legend-weight {
+  color: var(--fg-secondary);
+  font-weight: 500;
+}
+
+.popover-asset-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.popover-asset-table th,
+.popover-asset-table td {
+  padding: 0.4rem 1rem;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.popover-asset-table th {
+  color: var(--fg-secondary);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.popover-asset-table .asset-symbol {
+  font-weight: 600;
+  color: var(--primary-dark);
+}
+
+.popover-asset-table .asset-weight {
+  text-align: right;
+  color: var(--fg);
+}
+
+.popover-asset-table th:last-child,
+.popover-asset-table td:last-child {
+  text-align: right;
+}
+
+.popover-asset-table tfoot {
+  border-top: 1px solid var(--border);
+}
+
+.popover-asset-table tfoot td {
+  color: var(--fg);
+}
+
+.popover-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.popover-edit-btn,
+.popover-remove-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.popover-edit-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.popover-edit-btn:hover {
+  background: var(--primary-dark);
+}
+
+.popover-remove-btn {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.popover-remove-btn:hover {
+  background: rgba(231, 76, 60, 0.1);
 }

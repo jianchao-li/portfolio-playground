@@ -16,11 +16,18 @@ interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
 }
 
-const COLORS = ['#3ecfb2', '#2eb89d', '#00b894', '#00a388', '#009177'];
+const COLORS = ['#3ecfb2', '#e74c3c', '#9b59b6', '#f39c12', '#3498db', '#1abc9c', '#e91e63'];
 
 export default function PerformanceChart({ data }: PerformanceChartProps) {
-  if (!data.length || !data[0].performance.dates.length) {
-    return <div className="chart-empty">No data to display</div>;
+  if (!data.length || !data[0]?.performance?.dates?.length) {
+    return (
+      <div className="chart-container">
+        <h3>Portfolio Performance (Normalized to 100)</h3>
+        <div className="chart-empty">
+          <p>Select portfolios to compare performance</p>
+        </div>
+      </div>
+    );
   }
 
   // Transform data for Recharts

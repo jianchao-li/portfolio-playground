@@ -7,8 +7,6 @@ interface StatsTableProps {
 }
 
 export default function StatsTable({ stats }: StatsTableProps) {
-  if (!stats.length) return null;
-
   const formatPercent = (value: number) => `${(value * 100).toFixed(2)}%`;
 
   return (
@@ -26,22 +24,30 @@ export default function StatsTable({ stats }: StatsTableProps) {
           </tr>
         </thead>
         <tbody>
-          {stats.map((s) => (
-            <tr key={s.name}>
-              <td className="portfolio-name">{s.name}</td>
-              <td className={s.total_return >= 0 ? 'positive' : 'negative'}>
-                {formatPercent(s.total_return)}
+          {stats.length > 0 ? (
+            stats.map((s) => (
+              <tr key={s.name}>
+                <td className="portfolio-name">{s.name}</td>
+                <td className={s.total_return >= 0 ? 'positive' : 'negative'}>
+                  {formatPercent(s.total_return)}
+                </td>
+                <td className={s.annualized_return >= 0 ? 'positive' : 'negative'}>
+                  {formatPercent(s.annualized_return)}
+                </td>
+                <td>{formatPercent(s.volatility)}</td>
+                <td className={s.sharpe_ratio >= 1 ? 'good' : ''}>
+                  {s.sharpe_ratio.toFixed(2)}
+                </td>
+                <td className="negative">{formatPercent(s.max_drawdown)}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={6} className="empty-row">
+                No portfolios selected
               </td>
-              <td className={s.annualized_return >= 0 ? 'positive' : 'negative'}>
-                {formatPercent(s.annualized_return)}
-              </td>
-              <td>{formatPercent(s.volatility)}</td>
-              <td className={s.sharpe_ratio >= 1 ? 'good' : ''}>
-                {s.sharpe_ratio.toFixed(2)}
-              </td>
-              <td className="negative">{formatPercent(s.max_drawdown)}</td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

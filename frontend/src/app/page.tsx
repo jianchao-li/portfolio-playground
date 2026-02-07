@@ -1,23 +1,50 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import PortfolioBuilder from '@/components/PortfolioBuilder';
+import PortfolioPopover from '@/components/PortfolioPopover';
 import PerformanceChart from '@/components/PerformanceChart';
 import StatsTable from '@/components/StatsTable';
 import { Asset, PortfolioStats, PerformanceData, analyzePortfolio } from '@/lib/api';
 
-// Default three-fund portfolio (Bogleheads)
-const DEFAULT_PORTFOLIO = {
-  name: 'Three-Fund Portfolio',
-  assets: [
-    { symbol: 'VTI', weight: 0.6 },
-    { symbol: 'VXUS', weight: 0.2 },
-    { symbol: 'BND', weight: 0.2 },
-  ] as Asset[],
-};
+// Preset portfolios for quick comparison
+const PRESET_PORTFOLIOS = [
+  {
+    name: 'Three-Fund Portfolio',
+    assets: [
+      { symbol: 'VTI', weight: 0.6 },
+      { symbol: 'VXUS', weight: 0.2 },
+      { symbol: 'BND', weight: 0.2 },
+    ] as Asset[],
+  },
+  {
+    name: 'S&P 500',
+    assets: [{ symbol: 'VTI', weight: 1.0 }] as Asset[],
+  },
+  {
+    name: 'NASDAQ 100',
+    assets: [{ symbol: 'QQQ', weight: 1.0 }] as Asset[],
+  },
+  {
+    name: 'Russell 2000',
+    assets: [{ symbol: 'IWM', weight: 1.0 }] as Asset[],
+  },
+  {
+    name: '60/40 Portfolio',
+    assets: [
+      { symbol: 'VTI', weight: 0.6 },
+      { symbol: 'BND', weight: 0.4 },
+    ] as Asset[],
+  },
+  {
+    name: 'Total World Stock',
+    assets: [{ symbol: 'VT', weight: 1.0 }] as Asset[],
+  },
+];
 
 interface PortfolioResult {
   name: string;
+  assets: Asset[];
   stats: PortfolioStats;
   performance: PerformanceData;
 }
@@ -27,8 +54,28 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [startDate, setStartDate] = useState('2023-01-01');
-  const [endDate, setEndDate] = useState('2024-01-01');
+  const [endDate, setEndDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+  const [showModal, setShowModal] = useState(false);
+  const [newPortfolioName, setNewPortfolioName] = useState('');
+  const [openPopover, setOpenPopover] = useState<string | null>(null);
+  const [editingPortfolio, setEditingPortfolio] = useState<PortfolioResult | null>(null);
+  const portfolioCounter = useRef(0);
   const hasLoadedInitial = useRef(false);
+
+  // Generate next available portfolio name
+  const getNextPortfolioName = () => {
+    const name = `Portfolio ${portfolioCounter.current}`;
+    portfolioCounter.current += 1;
+    return name;
+  };
+
+  const openAddModal = () => {
+    setNewPortfolioName(getNextPortfolioName());
+    setShowModal(true);
+  };
 
   const handleAnalyze = async (name: string, assets: Asset[]) => {
     setLoading(true);
@@ -41,11 +88,13 @@ export default function Home() {
         endDate
       );
 
-      // Add to results (or replace if same name exists)
+      // Add to results (or replace if same name exists), including assets
       setResults((prev) => {
         const filtered = prev.filter((r) => r.name !== name);
-        return [...filtered, { name, ...response }];
+        return [...filtered, { name, assets, ...response }];
       });
+      setShowModal(false);
+      setEditingPortfolio(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -53,17 +102,35 @@ export default function Home() {
     }
   };
 
-  // Auto-analyze default portfolio on mount
+  const addPreset = async (preset: { name: string; assets: Asset[] }) => {
+    if (results.some((r) => r.name === preset.name)) {
+      return;
+    }
+    await handleAnalyze(preset.name, preset.assets);
+  };
+
+  const removePortfolio = (name: string) => {
+    setResults((prev) => prev.filter((r) => r.name !== name));
+    setOpenPopover(null);
+  };
+
+  const handleEditClick = (portfolio: PortfolioResult) => {
+    setOpenPopover(null);
+    setEditingPortfolio(portfolio);
+  };
+
+  const handleCloseEdit = () => {
+    setEditingPortfolio(null);
+  };
+
+  // Auto-load Three-Fund Portfolio on mount
   useEffect(() => {
     if (!hasLoadedInitial.current) {
       hasLoadedInitial.current = true;
-      handleAnalyze(DEFAULT_PORTFOLIO.name, DEFAULT_PORTFOLIO.assets);
+      const threeFund = PRESET_PORTFOLIOS[0]; // Three-Fund Portfolio is first
+      handleAnalyze(threeFund.name, threeFund.assets);
     }
   }, []);
-
-  const clearResults = () => {
-    setResults([]);
-  };
 
   return (
     <div className="container">
@@ -72,19 +139,21 @@ export default function Home() {
         <p>Build, analyze, and compare investment portfolios</p>
       </header>
 
-      <div className="main-content">
-        <aside>
-          <div className="form-group date-range">
-            <div>
-              <label>Start Date</label>
+      {/* Top Controls Bar - Two Row Layout */}
+      <div className="controls-bar">
+        {/* Row 1: Date Range + Selected Portfolios */}
+        <div className="controls-row-1">
+          <div className="date-inputs">
+            <div className="date-field">
+              <label>Start</label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
-            <div>
-              <label>End Date</label>
+            <div className="date-field">
+              <label>End</label>
               <input
                 type="date"
                 value={endDate}
@@ -92,38 +161,118 @@ export default function Home() {
               />
             </div>
           </div>
-          <PortfolioBuilder onSubmit={handleAnalyze} loading={loading} />
-          {results.length > 0 && (
-            <button
-              onClick={clearResults}
-              style={{ marginTop: '1rem', width: '100%' }}
-              className="add-btn"
-            >
-              Clear All Results
-            </button>
-          )}
-        </aside>
 
-        <section className="results">
-          {error && <div className="error-message">{error}</div>}
+          <div className="controls-divider" />
 
-          {results.length > 0 ? (
-            <>
-              <PerformanceChart
-                data={results.map((r) => ({
-                  name: r.name,
-                  performance: r.performance,
-                }))}
-              />
-              <StatsTable stats={results.map((r) => r.stats)} />
-            </>
-          ) : (
-            <div className="placeholder">
-              <p>Configure a portfolio and click &quot;Analyze&quot; to see results</p>
-            </div>
-          )}
-        </section>
+          <div className="portfolio-chips">
+            {results.map((r) => (
+              <div
+                key={r.name}
+                className="portfolio-chip-wrapper"
+                onMouseEnter={() => setOpenPopover(r.name)}
+                onMouseLeave={() => setOpenPopover(null)}
+              >
+                <div
+                  className={`portfolio-chip clickable ${openPopover === r.name ? 'active' : ''}`}
+                >
+                  <span>{r.name}</span>
+                </div>
+                {openPopover === r.name && (
+                  <PortfolioPopover
+                    name={r.name}
+                    assets={r.assets}
+                    onEdit={() => handleEditClick(r)}
+                    onRemove={() => removePortfolio(r.name)}
+                    onClose={() => setOpenPopover(null)}
+                  />
+                )}
+              </div>
+            ))}
+            {results.length === 0 && (
+              <span className="no-portfolios-hint">No portfolios selected</span>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2: Presets + Custom Button */}
+        <div className="controls-row-2">
+          <div className="preset-chips">
+            {PRESET_PORTFOLIOS.map((preset) => {
+              const isAdded = results.some((r) => r.name === preset.name);
+              return (
+                <button
+                  key={preset.name}
+                  onClick={() => isAdded ? removePortfolio(preset.name) : addPreset(preset)}
+                  disabled={loading}
+                  className={`preset-chip ${isAdded ? 'added' : ''}`}
+                >
+                  {isAdded ? '✓' : '+'} {preset.name}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={openAddModal}
+            className="add-custom-btn"
+          >
+            + Custom
+          </button>
+        </div>
       </div>
+
+      {/* Error Message */}
+      {error && <div className="error-message">{error}</div>}
+
+      {/* Full Width Results */}
+      <div className="results-full">
+        <PerformanceChart
+          data={results.map((r) => ({
+            name: r.name,
+            performance: r.performance,
+          }))}
+        />
+        <StatsTable stats={results.map((r) => r.stats)} />
+      </div>
+
+      {/* Modal for Custom Portfolio */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add Custom Portfolio</h2>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                ×
+              </button>
+            </div>
+            <PortfolioBuilder
+              onSubmit={handleAnalyze}
+              loading={loading}
+              initialName={newPortfolioName}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Editing Portfolio */}
+      {editingPortfolio && (
+        <div className="modal-overlay" onClick={handleCloseEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Portfolio</h2>
+              <button className="modal-close" onClick={handleCloseEdit}>
+                ×
+              </button>
+            </div>
+            <PortfolioBuilder
+              onSubmit={handleAnalyze}
+              loading={loading}
+              initialName={editingPortfolio.name}
+              initialAssets={editingPortfolio.assets}
+              submitLabel="Update Portfolio"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
