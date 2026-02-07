@@ -38,7 +38,7 @@ const PRESET_PORTFOLIOS = [
     assets: [{ symbol: 'IBIT', weight: 1.0 }] as Asset[],
   },
   {
-    name: 'VIX (Volatility)',
+    name: 'Volatility',
     assets: [{ symbol: 'VIXY', weight: 1.0 }] as Asset[],
   },
 ];
