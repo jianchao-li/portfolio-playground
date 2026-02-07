@@ -1,0 +1,14 @@
+{
+  "name": "portfolio-playground",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names backend,frontend -c blue,green \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
+    "dev:backend": "cd backend && ./venv/bin/uvicorn app.main:app --reload",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "install:all": "pnpm install && cd backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    "build": "pnpm --filter frontend build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
