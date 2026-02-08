@@ -25,7 +25,7 @@ class Portfolio(BaseModel):
 
     def validate_weights(self) -> bool:
         total = sum(asset.weight for asset in self.assets)
-        return abs(total - 1.0) < 0.01  # Allow small floating point errors
+        return abs(total - 1.0) < 1e-9  # Allow small floating point errors
 
 
 MAX_DATE_RANGE_YEARS = 25

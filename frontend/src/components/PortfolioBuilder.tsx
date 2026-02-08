@@ -82,7 +82,7 @@ export default function PortfolioBuilder({
       const n = Number(a.weight);
       return a.weight !== '' && !isNaN(n) && (n < 0 || n > 1);
     });
-    const totalOff = !hasEmpty && !hasInvalid && !hasOutOfRange && Math.abs(totalWeight - 1) >= 0.01;
+    const totalOff = !hasEmpty && !hasInvalid && !hasOutOfRange && Math.abs(totalWeight - 1) >= 1e-9;
 
     if (hasEmpty) validationErrors.push('Set a weight for each asset');
     if (hasInvalid) validationErrors.push('Weights must be valid numbers');
