@@ -415,6 +415,11 @@ export default function Home() {
               <span className="results-loading-indicator">Loading…</span>
             </div>
           )}
+          {loading && results.length === 0 && (
+            <div className="first-load-message">
+              Fetching live market data — first load may take a moment
+            </div>
+          )}
           <Suspense fallback={<ChartSkeleton />}>
             <PerformanceChart
               data={chartData}
