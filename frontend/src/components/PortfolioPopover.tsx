@@ -9,8 +9,8 @@ import { formatPercent } from '@/lib/formatting';
 interface PortfolioPopoverProps {
   name: string;
   assets: Asset[];
-  onEdit: () => void;
-  onRemove: () => void;
+  onEdit?: () => void;
+  onRemove?: () => void;
   onClose: () => void;
 }
 
@@ -73,14 +73,20 @@ export default function PortfolioPopover({
           ))}
         </div>
       </div>
-      <div className="popover-actions">
-        <button className="popover-edit-btn" onClick={onEdit}>
-          Edit
-        </button>
-        <button className="popover-remove-btn" onClick={onRemove}>
-          Remove
-        </button>
-      </div>
+      {(onEdit || onRemove) && (
+        <div className="popover-actions">
+          {onEdit && (
+            <button className="popover-edit-btn" onClick={onEdit}>
+              Edit
+            </button>
+          )}
+          {onRemove && (
+            <button className="popover-remove-btn" onClick={onRemove}>
+              Remove
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -321,14 +321,27 @@ export default function Home() {
             }
 
             return (
-              <button
+              <div
                 key={preset.name}
-                onClick={() => addPreset(preset)}
-                disabled={loading}
-                className="portfolio-chip-unified inactive"
+                className="portfolio-chip-wrapper"
+                onMouseEnter={() => setOpenPopover(preset.name)}
+                onMouseLeave={() => setOpenPopover(null)}
               >
-                + {preset.name}
-              </button>
+                <button
+                  onClick={() => addPreset(preset)}
+                  disabled={loading}
+                  className="portfolio-chip-unified inactive"
+                >
+                  + {preset.name}
+                </button>
+                {openPopover === preset.name && (
+                  <PortfolioPopover
+                    name={preset.name}
+                    assets={preset.assets}
+                    onClose={() => setOpenPopover(null)}
+                  />
+                )}
+              </div>
             );
           })}
 
