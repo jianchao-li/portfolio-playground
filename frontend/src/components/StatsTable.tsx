@@ -18,9 +18,10 @@ interface InfoTooltipProps {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
+  tooltipClassName?: string;
 }
 
-function InfoTooltip({ term, isOpen, onOpen, onClose }: InfoTooltipProps) {
+function InfoTooltip({ term, isOpen, onOpen, onClose, tooltipClassName }: InfoTooltipProps) {
   return (
     <span
       className="info-tooltip-wrapper"
@@ -31,7 +32,7 @@ function InfoTooltip({ term, isOpen, onOpen, onClose }: InfoTooltipProps) {
         ⓘ
       </span>
       {isOpen && (
-        <div className="info-tooltip">
+        <div className={`info-tooltip${tooltipClassName ? ` ${tooltipClassName}` : ''}`}>
           <div className="info-tooltip-content">
             <strong>{term}</strong>
             <p>{METRIC_DEFINITIONS[term]}</p>
@@ -75,7 +76,7 @@ export default function StatsTable({ stats, onHighlight }: StatsTableProps) {
             </th>
             <th>
               Max Drawdown
-              <InfoTooltip term="Max Drawdown" isOpen={openTooltip === 'Max Drawdown'} onOpen={() => setOpenTooltip('Max Drawdown')} onClose={() => setOpenTooltip(null)} />
+              <InfoTooltip term="Max Drawdown" isOpen={openTooltip === 'Max Drawdown'} onOpen={() => setOpenTooltip('Max Drawdown')} onClose={() => setOpenTooltip(null)} tooltipClassName="info-tooltip-right" />
             </th>
           </tr>
         </thead>

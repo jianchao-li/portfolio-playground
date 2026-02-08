@@ -322,7 +322,7 @@ body {
 .currency-dropdown {
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
+  right: 0;
   min-width: 260px;
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -785,6 +785,13 @@ input[type="date"]:focus {
   left: 0;
   transform: none;
   max-width: 320px;
+}
+
+/* Right-aligned tooltip for rightmost columns */
+.info-tooltip-right {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 .error-message {
