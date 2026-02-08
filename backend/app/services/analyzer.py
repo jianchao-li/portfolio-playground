@@ -140,7 +140,9 @@ class PortfolioAnalyzer:
             max_drawdown=round(max_drawdown, 4)
         )
 
-    def analyze(self, portfolio: Portfolio, start_date: date, end_date: date, currency: CurrencyCode = "USD") -> tuple[PortfolioStats, PerformanceData]:
+    def analyze(self, portfolio: Portfolio, start_date: date, end_date: date,
+                currency: CurrencyCode = "USD",
+                rf_rates=None, exchange_rates=None) -> tuple[PortfolioStats, PerformanceData]:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
         prices = self.fetch_prices(symbols, start_date, end_date)
@@ -150,14 +152,16 @@ class PortfolioAnalyzer:
 
         # Then convert to target currency (captures both asset returns + currency movement)
         if currency != "USD":
-            exchange_rates = self.currency_service.fetch_exchange_rates(
-                currency, start_date, end_date
-            )
+            if exchange_rates is None:
+                exchange_rates = self.currency_service.fetch_exchange_rates(
+                    currency, start_date, end_date
+                )
             aligned_rates = exchange_rates.reindex(portfolio_values.index, method="ffill").bfill()
             portfolio_values = portfolio_values * aligned_rates
 
-        # Fetch historical risk-free rates for Sharpe ratio calculation
-        rf_rates = self.fetch_risk_free_rates(start_date, end_date)
+        # Fetch historical risk-free rates for Sharpe ratio calculation (if not provided)
+        if rf_rates is None:
+            rf_rates = self.fetch_risk_free_rates(start_date, end_date)
 
         stats = self.calculate_stats(portfolio_values, portfolio.name, rf_rates)
 

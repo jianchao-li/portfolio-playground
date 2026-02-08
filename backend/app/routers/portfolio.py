@@ -52,6 +52,14 @@ async def compare_portfolios(request: ComparisonRequest):
 
     try:
         analyzer = PortfolioAnalyzer()
+        rf_rates = analyzer.fetch_risk_free_rates(request.start_date, request.end_date)
+
+        exchange_rates = None
+        if request.currency != "USD":
+            exchange_rates = analyzer.currency_service.fetch_exchange_rates(
+                request.currency, request.start_date, request.end_date
+            )
+
         results = []
 
         for portfolio in request.portfolios:
@@ -59,7 +67,9 @@ async def compare_portfolios(request: ComparisonRequest):
                 portfolio=portfolio,
                 start_date=request.start_date,
                 end_date=request.end_date,
-                currency=request.currency
+                currency=request.currency,
+                rf_rates=rf_rates,
+                exchange_rates=exchange_rates
             )
             results.append({
                 "stats": stats,
