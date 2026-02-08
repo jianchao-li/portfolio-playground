@@ -17,6 +17,7 @@ const PRESET_PORTFOLIOS = [
   {
     name: 'S&P 500',
     assets: [{ symbol: 'VOO', weight: 1.0 }] as Asset[],
+    default: true,
   },
   {
     name: 'NASDAQ 100',
@@ -25,10 +26,12 @@ const PRESET_PORTFOLIOS = [
   {
     name: 'Developed Markets ex-US',
     assets: [{ symbol: 'VEA', weight: 1.0 }] as Asset[],
+    default: true,
   },
   {
     name: 'Emerging Markets',
     assets: [{ symbol: 'VWO', weight: 1.0 }] as Asset[],
+    default: true,
   },
   {
     name: 'Gold',
@@ -151,14 +154,15 @@ export default function Home() {
         setLoading(true);
         setError(null);
         try {
-          const portfolios = PRESET_PORTFOLIOS.map((p) => ({
+          const defaultPresets = PRESET_PORTFOLIOS.filter((p) => p.default);
+          const portfolios = defaultPresets.map((p) => ({
             name: p.name,
             assets: p.assets,
           }));
           const response = await comparePortfolios(portfolios, startDate, endDate, currency);
           const allResults = response.portfolios.map((r, i) => ({
-            name: PRESET_PORTFOLIOS[i].name,
-            assets: PRESET_PORTFOLIOS[i].assets,
+            name: defaultPresets[i].name,
+            assets: defaultPresets[i].assets,
             stats: r.stats,
             performance: r.performance,
           }));
