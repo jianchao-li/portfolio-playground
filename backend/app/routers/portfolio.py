@@ -23,7 +23,7 @@ def get_currencies():
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
-@limiter.limit("10/minute")
+@limiter.limit("20/minute")
 def analyze_portfolio(request: Request, body: AnalysisRequest):
     """Analyze a single portfolio and return stats + performance data."""
     if not body.portfolio.validate_weights():
@@ -45,7 +45,7 @@ def analyze_portfolio(request: Request, body: AnalysisRequest):
 
 
 @router.post("/compare")
-@limiter.limit("5/minute")
+@limiter.limit("20/minute")
 def compare_portfolios(request: Request, body: ComparisonRequest):
     """Compare multiple portfolios."""
     for portfolio in body.portfolios:
