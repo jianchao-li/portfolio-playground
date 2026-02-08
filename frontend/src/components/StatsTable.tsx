@@ -59,23 +59,23 @@ export default function StatsTable({ stats, onHighlight }: StatsTableProps) {
           <tr>
             <th>Portfolio</th>
             <th>
-              Total Return
+              <span className="header-full">Total Return</span><span className="header-short">Total Ret.</span>
               <InfoTooltip term="Total Return" isOpen={openTooltip === 'Total Return'} onOpen={() => setOpenTooltip('Total Return')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
-              Annualized Return
+              <span className="header-full">Annualized Return</span><span className="header-short">Ann. Return</span>
               <InfoTooltip term="Annualized Return" isOpen={openTooltip === 'Annualized Return'} onOpen={() => setOpenTooltip('Annualized Return')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
-              Volatility
+              <span className="header-full">Volatility</span><span className="header-short">Volatility</span>
               <InfoTooltip term="Volatility" isOpen={openTooltip === 'Volatility'} onOpen={() => setOpenTooltip('Volatility')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
-              Sharpe Ratio
+              <span className="header-full">Sharpe Ratio</span><span className="header-short">Sharpe</span>
               <InfoTooltip term="Sharpe Ratio" isOpen={openTooltip === 'Sharpe Ratio'} onOpen={() => setOpenTooltip('Sharpe Ratio')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
-              Max Drawdown
+              <span className="header-full">Max Drawdown</span><span className="header-short">Max DD</span>
               <InfoTooltip term="Max Drawdown" isOpen={openTooltip === 'Max Drawdown'} onOpen={() => setOpenTooltip('Max Drawdown')} onClose={() => setOpenTooltip(null)} tooltipClassName="info-tooltip-right" />
             </th>
           </tr>

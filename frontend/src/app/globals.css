@@ -509,16 +509,17 @@ body {
 }
 
 .results-card-chart {
-  flex: 1;
+  flex: 1.2;
   min-width: 0;
 }
 
 .results-card-table {
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   overflow-x: auto;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
   .results-row {
     flex-direction: column;
   }
@@ -741,7 +742,7 @@ input[type="date"]:focus {
 
 .stats-table th,
 .stats-table td {
-  padding: 0.875rem;
+  padding: 0.75rem 0.625rem;
   text-align: right;
   border-bottom: 1px solid var(--border);
 }
@@ -750,6 +751,7 @@ input[type="date"]:focus {
   font-weight: 600;
   color: var(--fg-secondary);
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .stats-table td:first-child,
@@ -782,6 +784,35 @@ input[type="date"]:focus {
 .stats-table .good {
   color: var(--success);
   font-weight: 500;
+}
+
+/* Responsive header abbreviations */
+.header-short {
+  display: none;
+}
+
+@media (min-width: 1401px) and (max-width: 1700px) {
+  .header-full {
+    display: none;
+  }
+
+  .header-short {
+    display: inline;
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.625rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .info-icon {
+    font-size: 0.75rem;
+  }
+
+  .info-tooltip-wrapper {
+    margin-left: 0.25rem;
+  }
 }
 
 /* Info Tooltip */
@@ -1105,6 +1136,13 @@ input[type="date"]:focus {
   font-size: 0.9rem;
   color: var(--fg-secondary);
   box-shadow: var(--shadow);
+}
+
+.first-load-message {
+  text-align: center;
+  color: var(--fg-secondary);
+  font-size: 0.9rem;
+  padding: 1rem;
 }
 
 @keyframes pulse {
