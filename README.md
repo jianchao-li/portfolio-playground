@@ -81,3 +81,9 @@ npm run dev
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
 
+## Deployment
+
+The app is deployed using free tiers: frontend on **Vercel** and backend on **Render**. Free-tier limitations include:
+
+- **Render cold starts** -- The backend spins down after inactivity. The first request may be slow while it spins back up.
+- **512 MB memory** -- Render free tier has limited RAM, which constrains cache sizes and concurrent requests.
