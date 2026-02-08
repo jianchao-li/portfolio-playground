@@ -44,7 +44,10 @@ async function fetchFromAPI<T>(
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${endpoint}`, options);
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw err;
+    }
     throw new Error('Unable to reach the server. Is the backend running?');
   }
 
@@ -75,7 +78,8 @@ export async function analyzePortfolio(
   portfolio: Portfolio,
   startDate: string,
   endDate: string,
-  currency: string = 'USD'
+  currency: string = 'USD',
+  signal?: AbortSignal
 ): Promise<AnalysisResponse> {
   return fetchFromAPI<AnalysisResponse>(
     '/api/portfolio/analyze',
@@ -88,6 +92,7 @@ export async function analyzePortfolio(
         end_date: endDate,
         currency,
       }),
+      signal,
     },
     'Failed to analyze portfolio'
   );
@@ -97,7 +102,8 @@ export async function comparePortfolios(
   portfolios: Portfolio[],
   startDate: string,
   endDate: string,
-  currency: string = 'USD'
+  currency: string = 'USD',
+  signal?: AbortSignal
 ): Promise<{ portfolios: AnalysisResponse[] }> {
   return fetchFromAPI<{ portfolios: AnalysisResponse[] }>(
     '/api/portfolio/compare',
@@ -110,6 +116,7 @@ export async function comparePortfolios(
         end_date: endDate,
         currency,
       }),
+      signal,
     },
     'Failed to compare portfolios'
   );

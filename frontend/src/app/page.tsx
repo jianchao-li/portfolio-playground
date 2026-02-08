@@ -76,6 +76,7 @@ export default function Home() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const hasLoadedInitial = useRef(false);
   const resultsRef = useRef<PortfolioResult[]>([]);
+  const analyzeControllerRef = useRef<AbortController | null>(null);
 
   // Keep ref in sync with results state
   useEffect(() => {
@@ -104,6 +105,10 @@ export default function Home() {
   };
 
   const handleAnalyze = async (name: string, assets: Asset[]) => {
+    analyzeControllerRef.current?.abort();
+    const controller = new AbortController();
+    analyzeControllerRef.current = controller;
+
     setLoading(true);
     setError(null);
 
@@ -112,7 +117,8 @@ export default function Home() {
         { name, assets },
         startDate,
         endDate,
-        currency
+        currency,
+        controller.signal
       );
 
       // Add to results (or replace if same name exists), including assets
@@ -123,9 +129,12 @@ export default function Home() {
       setShowModal(false);
       setEditingPortfolio(null);
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -184,6 +193,8 @@ export default function Home() {
       return;
     }
 
+    const controller = new AbortController();
+
     const refreshPortfolios = async () => {
       setLoading(true);
       setError(null);
@@ -193,7 +204,7 @@ export default function Home() {
           name: r.name,
           assets: r.assets,
         }));
-        const response = await comparePortfolios(portfolios, startDate, endDate, currency);
+        const response = await comparePortfolios(portfolios, startDate, endDate, currency, controller.signal);
         const refreshedResults = response.portfolios.map((r, i) => ({
           name: currentResults[i].name,
           assets: currentResults[i].assets,
@@ -202,13 +213,17 @@ export default function Home() {
         }));
         setResults(refreshedResults);
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         setError(err instanceof Error ? err.message : 'Failed to refresh data');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
     refreshPortfolios();
+    return () => controller.abort();
   }, [startDate, endDate, currency]);
 
   const chartData = useMemo(() => results.map((r) => ({
