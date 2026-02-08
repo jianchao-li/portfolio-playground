@@ -278,9 +278,10 @@ export default function Home() {
             onClick={openAddModal}
             className="add-custom-btn"
           >
-            + Custom
+            + Custom Portfolio
           </button>
           <div className="portfolio-chips-right">
+          <span className="preset-label">Presets:</span>
           {PRESET_PORTFOLIOS.map((preset) => {
             const resultIndex = results.findIndex((r) => r.name === preset.name);
             const isActive = resultIndex !== -1;

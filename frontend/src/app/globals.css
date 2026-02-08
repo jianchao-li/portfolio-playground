@@ -164,6 +164,12 @@ body {
   margin-left: auto;
 }
 
+.preset-label {
+  font-size: 0.85rem;
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+
 /* Unified Portfolio Chip */
 .portfolio-chip-unified {
   display: inline-flex;
