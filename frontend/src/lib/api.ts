@@ -45,7 +45,11 @@ async function fetchFromAPI<T>(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || errorMessage);
+    let detail = error.detail;
+    if (Array.isArray(detail)) {
+      detail = detail[0]?.msg?.replace(/^Value error, /, '') || errorMessage;
+    }
+    throw new Error(detail || errorMessage);
   }
 
   return response.json();

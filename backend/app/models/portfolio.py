@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, AfterValidator
-from typing import Annotated
-from datetime import date
+from pydantic import BaseModel, Field, AfterValidator, model_validator
+from typing import Annotated, Self
+from datetime import date, timedelta
 
 from app.services.currency import SUPPORTED_CURRENCIES
 
@@ -28,11 +28,30 @@ class Portfolio(BaseModel):
         return abs(total - 1.0) < 0.01  # Allow small floating point errors
 
 
+MAX_DATE_RANGE_YEARS = 25
+
+
+def _validate_date_range(start_date: date, end_date: date) -> None:
+    if start_date >= end_date:
+        raise ValueError("Start date must be before end date")
+    if start_date > date.today():
+        raise ValueError("Start date cannot be in the future")
+    if end_date > date.today():
+        raise ValueError("End date cannot be in the future")
+    if (end_date - start_date) > timedelta(days=MAX_DATE_RANGE_YEARS * 365):
+        raise ValueError("Date range cannot exceed 25 years")
+
+
 class AnalysisRequest(BaseModel):
     portfolio: Portfolio
     start_date: date
     end_date: date
     currency: SupportedCurrency = Field(default="USD", description="Currency for portfolio values")
+
+    @model_validator(mode='after')
+    def validate_dates(self) -> Self:
+        _validate_date_range(self.start_date, self.end_date)
+        return self
 
 
 class ComparisonRequest(BaseModel):
@@ -40,6 +59,11 @@ class ComparisonRequest(BaseModel):
     start_date: date
     end_date: date
     currency: SupportedCurrency = Field(default="USD", description="Currency for portfolio values")
+
+    @model_validator(mode='after')
+    def validate_dates(self) -> Self:
+        _validate_date_range(self.start_date, self.end_date)
+        return self
 
 
 class PortfolioStats(BaseModel):
