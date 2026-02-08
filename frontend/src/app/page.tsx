@@ -227,12 +227,14 @@ export default function Home() {
             <h1>Portfolio Playground</h1>
             <div className="header-subtitle">
               <span>Build, analyze, and compare investment portfolios</span>
+              <a className="header-link header-link-about" href="https://jianchao-li.github.io/portfolio-playground" target="_blank" rel="noopener noreferrer">About</a>
+              <a className="header-link header-link-source" href="https://github.com/jianchao-li/portfolio-playground" target="_blank" rel="noopener noreferrer">Source Code</a>
               <span
                 className="disclaimer-wrapper"
                 onMouseEnter={() => setShowDisclaimer(true)}
                 onMouseLeave={() => setShowDisclaimer(false)}
               >
-                <span className="disclaimer-link">Please read our disclaimer</span>
+                <span className="disclaimer-link">Disclaimer (please read)</span>
                 {showDisclaimer && (
                   <div className="disclaimer-tooltip">
                     <div className="disclaimer-tooltip-content">

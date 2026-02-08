@@ -104,6 +104,7 @@ export default function CurrencySelector({
         >
           <span className="currency-trigger-flag">{selected?.flag ?? ''}</span>
           <span className="currency-trigger-code">{value}</span>
+          <span className="currency-trigger-name">{selected?.name ?? ''}</span>
           <span className="currency-trigger-arrow">{isOpen ? '▲' : '▼'}</span>
         </button>
 
