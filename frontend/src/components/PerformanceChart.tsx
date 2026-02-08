@@ -60,6 +60,7 @@ function ChartInfoTooltip({ isOpen, onOpen, onClose, currencyName }: ChartInfoTo
                 The curve shows combined asset performance and currency movement over time.
               </p>
             )}
+            <p>Results assume buy-and-hold with no rebalancing. Weights drift with market movements over time.</p>
           </div>
         </div>
       )}
