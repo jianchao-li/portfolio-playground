@@ -303,7 +303,12 @@ export default function Home() {
                         color: color,
                       }}
                     >
-                      {r.name}
+                      <span
+                        className="chip-name"
+                        onClick={() => handleEditClick(r)}
+                      >
+                        {r.name}
+                      </span>
                       <button
                         className="chip-remove"
                         onClick={() => removePortfolio(r.name)}

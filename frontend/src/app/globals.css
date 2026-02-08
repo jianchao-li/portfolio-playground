@@ -222,6 +222,10 @@ body {
   font-weight: 500;
 }
 
+.chip-name {
+  cursor: pointer;
+}
+
 .chip-remove {
   background: none;
   border: none;
@@ -231,11 +235,12 @@ body {
   padding: 0;
   margin-left: 0.1rem;
   opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, color 0.2s;
 }
 
 .chip-remove:hover {
   opacity: 1;
+  color: var(--danger) !important;
 }
 
 @media (max-width: 900px) {
