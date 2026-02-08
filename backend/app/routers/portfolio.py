@@ -16,13 +16,13 @@ router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
 
 @router.get("/currencies")
-async def get_currencies():
+def get_currencies():
     """Return list of supported currencies."""
     return get_currency_list()
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
-async def analyze_portfolio(request: AnalysisRequest):
+def analyze_portfolio(request: AnalysisRequest):
     """Analyze a single portfolio and return stats + performance data."""
     if not request.portfolio.validate_weights():
         raise HTTPException(status_code=400, detail="Portfolio weights must sum to 1.0")
@@ -41,7 +41,7 @@ async def analyze_portfolio(request: AnalysisRequest):
 
 
 @router.post("/compare")
-async def compare_portfolios(request: ComparisonRequest):
+def compare_portfolios(request: ComparisonRequest):
     """Compare multiple portfolios."""
     for portfolio in request.portfolios:
         if not portfolio.validate_weights():
