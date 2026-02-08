@@ -1,7 +1,8 @@
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 
+from app.limiter import limiter
 from app.models.portfolio import (
     AnalysisRequest,
     AnalysisResponse,
@@ -22,20 +23,21 @@ def get_currencies():
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
-def analyze_portfolio(request: AnalysisRequest):
+@limiter.limit("10/minute")
+def analyze_portfolio(request: Request, body: AnalysisRequest):
     """Analyze a single portfolio and return stats + performance data."""
-    if not request.portfolio.validate_weights():
+    if not body.portfolio.validate_weights():
         raise HTTPException(status_code=400, detail="Portfolio weights must sum to 1.0")
 
     try:
         analyzer = PortfolioAnalyzer()
         stats, performance = analyzer.analyze(
-            portfolio=request.portfolio,
-            start_date=request.start_date,
-            end_date=request.end_date,
-            currency=request.currency
+            portfolio=body.portfolio,
+            start_date=body.start_date,
+            end_date=body.end_date,
+            currency=body.currency
         )
-        return AnalysisResponse(stats=stats, performance=performance, currency=request.currency)
+        return AnalysisResponse(stats=stats, performance=performance, currency=body.currency)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -43,9 +45,10 @@ def analyze_portfolio(request: AnalysisRequest):
 
 
 @router.post("/compare")
-def compare_portfolios(request: ComparisonRequest):
+@limiter.limit("5/minute")
+def compare_portfolios(request: Request, body: ComparisonRequest):
     """Compare multiple portfolios."""
-    for portfolio in request.portfolios:
+    for portfolio in body.portfolios:
         if not portfolio.validate_weights():
             raise HTTPException(
                 status_code=400,
@@ -54,30 +57,30 @@ def compare_portfolios(request: ComparisonRequest):
 
     try:
         analyzer = PortfolioAnalyzer()
-        rf_rates = analyzer.fetch_risk_free_rates(request.start_date, request.end_date)
+        rf_rates = analyzer.fetch_risk_free_rates(body.start_date, body.end_date)
 
         exchange_rates = None
-        if request.currency != "USD":
+        if body.currency != "USD":
             exchange_rates = analyzer.currency_service.fetch_exchange_rates(
-                request.currency, request.start_date, request.end_date
+                body.currency, body.start_date, body.end_date
             )
 
         all_symbols = list({
             asset.symbol
-            for portfolio in request.portfolios
+            for portfolio in body.portfolios
             for asset in portfolio.assets
         })
-        all_prices = analyzer.fetch_prices(all_symbols, request.start_date, request.end_date,
+        all_prices = analyzer.fetch_prices(all_symbols, body.start_date, body.end_date,
                                            batch=True)
 
         results = []
 
-        for portfolio in request.portfolios:
+        for portfolio in body.portfolios:
             stats, performance = analyzer.analyze(
                 portfolio=portfolio,
-                start_date=request.start_date,
-                end_date=request.end_date,
-                currency=request.currency,
+                start_date=body.start_date,
+                end_date=body.end_date,
+                currency=body.currency,
                 rf_rates=rf_rates,
                 exchange_rates=exchange_rates,
                 all_prices=all_prices
@@ -85,7 +88,7 @@ def compare_portfolios(request: ComparisonRequest):
             results.append({
                 "stats": stats,
                 "performance": performance,
-                "currency": request.currency
+                "currency": body.currency
             })
 
         return {"portfolios": results}
@@ -96,7 +99,8 @@ def compare_portfolios(request: ComparisonRequest):
 
 
 @router.get("/symbols/search")
-async def search_symbols(q: str):
+@limiter.limit("30/minute")
+async def search_symbols(request: Request, q: str):
     """Search for ticker symbols using Yahoo Finance search API."""
     import httpx
 
