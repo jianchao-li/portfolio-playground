@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { LineChart, Line } from 'recharts';
-import { PortfolioStats, PerformanceData } from '@/lib/api';
+import { useState } from 'react';
+import { PortfolioStats } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 import { formatPercent } from '@/lib/formatting';
 
@@ -43,36 +42,11 @@ function InfoTooltip({ term, isOpen, onOpen, onClose }: InfoTooltipProps) {
   );
 }
 
-interface PortfolioData {
-  stats: PortfolioStats;
-  performance: PerformanceData;
-}
-
 interface StatsTableProps {
-  data: PortfolioData[];
+  stats: PortfolioStats[];
 }
 
-function Sparkline({ performance, color }: { performance: PerformanceData; color: string }) {
-  const chartData = useMemo(() =>
-    performance.values.map((v) => ({ v })),
-    [performance.values]
-  );
-
-  return (
-    <LineChart width={100} height={32} data={chartData}>
-      <Line
-        type="monotone"
-        dataKey="v"
-        stroke={color}
-        strokeWidth={1.5}
-        dot={false}
-        isAnimationActive={false}
-      />
-    </LineChart>
-  );
-}
-
-export default function StatsTable({ data }: StatsTableProps) {
+export default function StatsTable({ stats }: StatsTableProps) {
   const [openTooltip, setOpenTooltip] = useState<string | null>(null);
 
   return (
@@ -82,7 +56,6 @@ export default function StatsTable({ data }: StatsTableProps) {
         <thead>
           <tr>
             <th>Portfolio</th>
-            <th className="sparkline-header"></th>
             <th>
               Total Return
               <InfoTooltip term="Total Return" isOpen={openTooltip === 'Total Return'} onOpen={() => setOpenTooltip('Total Return')} onClose={() => setOpenTooltip(null)} />
@@ -106,8 +79,8 @@ export default function StatsTable({ data }: StatsTableProps) {
           </tr>
         </thead>
         <tbody>
-          {data.length > 0 ? (
-            data.map(({ stats: s, performance }, index) => {
+          {stats.length > 0 ? (
+            stats.map((s, index) => {
               const color = getPortfolioColor(index);
 
               return (
@@ -120,9 +93,6 @@ export default function StatsTable({ data }: StatsTableProps) {
                   }}
                 >
                   <td className="portfolio-name">{s.name}</td>
-                  <td className="sparkline-cell">
-                    <Sparkline performance={performance} color={color} />
-                  </td>
                   <td className={s.total_return >= 0 ? 'positive' : 'negative'}>
                     {formatPercent(s.total_return)}
                   </td>
@@ -139,7 +109,7 @@ export default function StatsTable({ data }: StatsTableProps) {
             })
           ) : (
             <tr>
-              <td colSpan={7} className="empty-row">
+              <td colSpan={6} className="empty-row">
                 No portfolios selected
               </td>
             </tr>

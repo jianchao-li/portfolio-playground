@@ -31,9 +31,9 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2rem 3rem;
 }
 
 /* Top Card */
@@ -432,13 +432,34 @@ body {
 }
 
 /* Result Cards */
+.results-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .results-card {
   background: var(--card-bg);
   padding: 1.5rem;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
-  margin-bottom: 1rem;
+}
+
+.results-card-chart {
+  flex: 1;
+  min-width: 0;
+}
+
+.results-card-table {
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+@media (max-width: 1200px) {
+  .results-row {
+    flex-direction: column;
+  }
 }
 
 /* Modal */
@@ -991,18 +1012,6 @@ input[type="date"]:focus {
 
 .stats-table tbody tr.stats-row:hover {
   background-color: rgba(0, 0, 0, 0.04) !important;
-}
-
-/* Sparkline column */
-.stats-table th.sparkline-header,
-.stats-table td.sparkline-cell {
-  width: 100px;
-  padding: 0.25rem 0.5rem;
-  text-align: center;
-}
-
-.stats-table td.sparkline-cell {
-  line-height: 0;
 }
 
 /* Loading Skeletons */

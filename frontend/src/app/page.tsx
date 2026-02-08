@@ -201,10 +201,7 @@ export default function Home() {
     performance: r.performance,
   })), [results]);
 
-  const statsData = useMemo(() => results.map((r) => ({
-    stats: r.stats,
-    performance: r.performance,
-  })), [results]);
+  const statsData = useMemo(() => results.map((r) => r.stats), [results]);
 
   return (
     <div className="container">
@@ -368,28 +365,29 @@ export default function Home() {
       {/* Error Message */}
       {error && <div className="error-message">{error}</div>}
 
-      {/* Portfolio Performance */}
-      <div className="results-card" style={{ position: 'relative' }}>
-        {loading && results.length > 0 && (
-          <div className="results-loading-overlay">
-            <span className="results-loading-indicator">Loading…</span>
-          </div>
-        )}
-        <Suspense fallback={<ChartSkeleton />}>
-          <PerformanceChart
-            data={chartData}
-            currency={currency}
-          />
-        </Suspense>
-      </div>
+      {/* Performance Chart & Statistics Table */}
+      <div className="results-row">
+        <div className="results-card results-card-chart" style={{ position: 'relative' }}>
+          {loading && results.length > 0 && (
+            <div className="results-loading-overlay">
+              <span className="results-loading-indicator">Loading…</span>
+            </div>
+          )}
+          <Suspense fallback={<ChartSkeleton />}>
+            <PerformanceChart
+              data={chartData}
+              currency={currency}
+            />
+          </Suspense>
+        </div>
 
-      {/* Portfolio Statistics */}
-      <div className="results-card">
-        <Suspense fallback={<TableSkeleton />}>
-          <StatsTable
-            data={statsData}
-          />
-        </Suspense>
+        <div className="results-card results-card-table">
+          <Suspense fallback={<TableSkeleton />}>
+            <StatsTable
+              stats={statsData}
+            />
+          </Suspense>
+        </div>
       </div>
 
       {/* Modal for Custom/Edit Portfolio */}
