@@ -1,36 +1,10 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export type CurrencyCode = 'AUD' | 'CAD' | 'CHF' | 'CNY' | 'EUR' | 'GBP' | 'JPY' | 'SGD' | 'USD';
-
 export interface CurrencyInfo {
-  code: CurrencyCode;
+  code: string;
   name: string;
   flag: string;
 }
-
-export const CURRENCIES: CurrencyInfo[] = [
-  { code: 'AUD', name: 'Australian Dollar', flag: '🇦🇺' },
-  { code: 'CAD', name: 'Canadian Dollar', flag: '🇨🇦' },
-  { code: 'CHF', name: 'Swiss Franc', flag: '🇨🇭' },
-  { code: 'CNY', name: 'Chinese Yuan', flag: '🇨🇳' },
-  { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
-  { code: 'GBP', name: 'British Pound', flag: '🇬🇧' },
-  { code: 'JPY', name: 'Japanese Yen', flag: '🇯🇵' },
-  { code: 'SGD', name: 'Singapore Dollar', flag: '🇸🇬' },
-  { code: 'USD', name: 'US Dollar', flag: '🇺🇸' },
-];
-
-export const CURRENCY_NAMES: Record<CurrencyCode, string> = {
-  AUD: 'Australian Dollar',
-  CAD: 'Canadian Dollar',
-  CHF: 'Swiss Franc',
-  CNY: 'Chinese Yuan',
-  EUR: 'Euro',
-  GBP: 'British Pound',
-  JPY: 'Japanese Yen',
-  SGD: 'Singapore Dollar',
-  USD: 'US Dollar',
-};
 
 export interface Asset {
   symbol: string;
@@ -59,7 +33,7 @@ export interface PerformanceData {
 export interface AnalysisResponse {
   stats: PortfolioStats;
   performance: PerformanceData;
-  currency: CurrencyCode;
+  currency: string;
 }
 
 async function fetchFromAPI<T>(
@@ -77,11 +51,19 @@ async function fetchFromAPI<T>(
   return response.json();
 }
 
+export async function fetchCurrencies(): Promise<CurrencyInfo[]> {
+  const response = await fetch(`${API_BASE}/api/portfolio/currencies`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch currencies');
+  }
+  return response.json();
+}
+
 export async function analyzePortfolio(
   portfolio: Portfolio,
   startDate: string,
   endDate: string,
-  currency: CurrencyCode = 'USD'
+  currency: string = 'USD'
 ): Promise<AnalysisResponse> {
   return fetchFromAPI<AnalysisResponse>(
     '/api/portfolio/analyze',
@@ -103,7 +85,7 @@ export async function comparePortfolios(
   portfolios: Portfolio[],
   startDate: string,
   endDate: string,
-  currency: CurrencyCode = 'USD'
+  currency: string = 'USD'
 ): Promise<{ portfolios: AnalysisResponse[] }> {
   return fetchFromAPI<{ portfolios: AnalysisResponse[] }>(
     '/api/portfolio/compare',

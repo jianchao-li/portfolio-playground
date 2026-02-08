@@ -5,7 +5,7 @@ import PortfolioBuilder from '@/components/PortfolioBuilder';
 import PortfolioPopover from '@/components/PortfolioPopover';
 import CurrencySelector from '@/components/CurrencySelector';
 import { ChartSkeleton, TableSkeleton } from '@/components/LoadingSkeletons';
-import { Asset, PortfolioStats, PerformanceData, analyzePortfolio, comparePortfolios, CurrencyCode } from '@/lib/api';
+import { Asset, PortfolioStats, PerformanceData, CurrencyInfo, analyzePortfolio, comparePortfolios, fetchCurrencies } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 
 // Lazy load heavy chart components
@@ -60,7 +60,10 @@ export default function Home() {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
-  const [currency, setCurrency] = useState<CurrencyCode>('USD');
+  const [currency, setCurrency] = useState('USD');
+  const [currencies, setCurrencies] = useState<CurrencyInfo[]>([
+    { code: 'USD', name: 'US Dollar', flag: '\u{1F1FA}\u{1F1F8}' },
+  ]);
   const [showModal, setShowModal] = useState(false);
   const [newPortfolioName, setNewPortfolioName] = useState('');
   const [openPopover, setOpenPopover] = useState<string | null>(null);
@@ -75,6 +78,13 @@ export default function Home() {
   useEffect(() => {
     resultsRef.current = results;
   }, [results]);
+
+  // Fetch supported currencies from backend
+  useEffect(() => {
+    fetchCurrencies()
+      .then(setCurrencies)
+      .catch(() => {});
+  }, []);
 
   // Generate next available portfolio name
   const getNextPortfolioName = () => {
@@ -252,6 +262,7 @@ export default function Home() {
                 value={currency}
                 onChange={setCurrency}
                 disabled={loading}
+                currencies={currencies}
               />
             </div>
           </div>
@@ -378,6 +389,7 @@ export default function Home() {
             <PerformanceChart
               data={chartData}
               currency={currency}
+              currencies={currencies}
               highlightedIndex={highlightedIndex}
             />
           </Suspense>

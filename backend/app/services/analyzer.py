@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData, CurrencyCode
+from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData
 from app.services.currency import CurrencyService
 
 
@@ -148,7 +148,7 @@ class PortfolioAnalyzer:
         )
 
     def analyze(self, portfolio: Portfolio, start_date: date, end_date: date,
-                currency: CurrencyCode = "USD",
+                currency: str = "USD",
                 rf_rates=None, exchange_rates=None,
                 all_prices=None) -> tuple[PortfolioStats, PerformanceData]:
         """Full analysis of a portfolio."""

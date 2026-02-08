@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { PerformanceData, CurrencyCode, CURRENCY_NAMES } from '@/lib/api';
+import { PerformanceData, CurrencyInfo } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 import { CHART_TOOLTIP_STYLE, CHART_TOOLTIP_ITEM_STYLE, CHART_TOOLTIP_LABEL_STYLE, CHART_AXIS_STYLE } from '@/lib/theme';
 
@@ -69,12 +69,13 @@ function ChartInfoTooltip({ isOpen, onOpen, onClose, currencyName }: ChartInfoTo
 
 interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
-  currency?: CurrencyCode;
+  currency?: string;
+  currencies?: CurrencyInfo[];
   highlightedIndex?: number | null;
 }
 
-export default function PerformanceChart({ data, currency = 'USD', highlightedIndex }: PerformanceChartProps) {
-  const currencyName = CURRENCY_NAMES[currency] || 'US Dollar';
+export default function PerformanceChart({ data, currency = 'USD', currencies = [], highlightedIndex }: PerformanceChartProps) {
+  const currencyName = currencies.find((c) => c.code === currency)?.name || 'US Dollar';
   const currencyCode = currency;
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
 

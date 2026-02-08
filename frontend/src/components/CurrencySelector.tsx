@@ -1,19 +1,21 @@
 'use client';
 
 import { useState, useRef, useCallback, useMemo } from 'react';
-import { CurrencyCode, CURRENCIES } from '@/lib/api';
+import { CurrencyInfo } from '@/lib/api';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface CurrencySelectorProps {
-  value: CurrencyCode;
-  onChange: (currency: CurrencyCode) => void;
+  value: string;
+  onChange: (currency: string) => void;
   disabled?: boolean;
+  currencies: CurrencyInfo[];
 }
 
 export default function CurrencySelector({
   value,
   onChange,
   disabled = false,
+  currencies,
 }: CurrencySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -31,20 +33,20 @@ export default function CurrencySelector({
 
   useClickOutside([triggerRef, dropdownRef], close);
 
-  const selected = CURRENCIES.find((c) => c.code === value) ?? CURRENCIES[0];
+  const selected = currencies.find((c) => c.code === value);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return CURRENCIES;
+    if (!search.trim()) return currencies;
     const q = search.toLowerCase();
-    return CURRENCIES.filter(
+    return currencies.filter(
       (c) =>
         c.code.toLowerCase().includes(q) ||
         c.name.toLowerCase().includes(q)
     );
-  }, [search]);
+  }, [search, currencies]);
 
   const toggleOpen = () => {
-    if (disabled) return;
+    if (disabled || currencies.length === 0) return;
     if (isOpen) {
       close();
     } else {
@@ -55,7 +57,7 @@ export default function CurrencySelector({
     }
   };
 
-  const selectCurrency = (code: CurrencyCode) => {
+  const selectCurrency = (code: string) => {
     onChange(code);
     close();
   };
@@ -100,8 +102,8 @@ export default function CurrencySelector({
           aria-haspopup="listbox"
           aria-expanded={isOpen}
         >
-          <span className="currency-trigger-flag">{selected.flag}</span>
-          <span className="currency-trigger-code">{selected.code}</span>
+          <span className="currency-trigger-flag">{selected?.flag ?? ''}</span>
+          <span className="currency-trigger-code">{value}</span>
           <span className="currency-trigger-arrow">{isOpen ? '▲' : '▼'}</span>
         </button>
 
@@ -117,7 +119,7 @@ export default function CurrencySelector({
                 ref={searchInputRef}
                 className="currency-search"
                 type="text"
-                placeholder="Type a currency / country"
+                placeholder="Type a currency"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);

@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from pydantic import BaseModel, Field, field_validator
+from typing import Optional
 from datetime import date
 
-CurrencyCode = Literal["USD", "EUR", "GBP", "CNY", "JPY", "CHF", "CAD", "AUD", "SGD"]
+from app.services.currency import SUPPORTED_CURRENCIES
 
 
 class Asset(BaseModel):
@@ -23,14 +23,28 @@ class AnalysisRequest(BaseModel):
     portfolio: Portfolio
     start_date: date
     end_date: date
-    currency: CurrencyCode = Field(default="USD", description="Currency for portfolio values")
+    currency: str = Field(default="USD", description="Currency for portfolio values")
+
+    @field_validator("currency")
+    @classmethod
+    def validate_currency(cls, v: str) -> str:
+        if v not in SUPPORTED_CURRENCIES:
+            raise ValueError(f"Unsupported currency: {v}")
+        return v
 
 
 class ComparisonRequest(BaseModel):
     portfolios: list[Portfolio] = Field(..., min_length=1, description="Portfolios to compare")
     start_date: date
     end_date: date
-    currency: CurrencyCode = Field(default="USD", description="Currency for portfolio values")
+    currency: str = Field(default="USD", description="Currency for portfolio values")
+
+    @field_validator("currency")
+    @classmethod
+    def validate_currency(cls, v: str) -> str:
+        if v not in SUPPORTED_CURRENCIES:
+            raise ValueError(f"Unsupported currency: {v}")
+        return v
 
 
 class PortfolioStats(BaseModel):
