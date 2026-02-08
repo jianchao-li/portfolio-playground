@@ -2,13 +2,15 @@
 
 A web application for analyzing and comparing investment portfolio performance. Build custom portfolios from real market data, visualize historical returns, and compare key risk/return metrics side by side.
 
+<video src="demo.mov" controls width="100%"></video>
+
 ## Features
 
 - **Portfolio builder** -- Create custom portfolios by searching for ticker symbols and assigning weights. Includes autocomplete search powered by Yahoo Finance.
 - **Preset portfolios** -- Quickly add common benchmarks: S&P 500 (VOO), NASDAQ 100 (QQQ), Developed Markets (VEA), Emerging Markets (VWO), Gold (GLD), Bitcoin (IBIT), and Volatility (VIXY).
 - **Performance chart** -- Compare portfolios on a normalized $100-start line chart over a configurable date range.
 - **Statistics table** -- Side-by-side comparison of Total Return, Annualized Return, Volatility, Sharpe Ratio, and Max Drawdown, with tooltips explaining each metric.
-- **Multi-currency support** -- View results in USD, EUR, GBP, CNY, JPY, CHF, CAD, AUD, or SGD using real-time exchange rates.
+- **Multi-currency support** -- View results in 40 currencies (USD, EUR, GBP, JPY, CNY, and more) using real-time exchange rates.
 - **Asset allocation view** -- Hover over any portfolio to see a pie chart breakdown of its holdings.
 
 ## Architecture
@@ -31,7 +33,7 @@ A web application for analyzing and comparing investment portfolio performance. 
 
 **Frontend** (`frontend/`) -- Next.js 14 with TypeScript and Recharts for charting. Handles portfolio construction UI, date/currency selection, and data visualization.
 
-**Backend** (`backend/`) -- FastAPI server that fetches market data from Yahoo Finance via `yfinance`, computes portfolio returns, and calculates financial metrics (volatility, Sharpe ratio, max drawdown). Uses historical daily T-bill rates for the risk-free rate in Sharpe ratio calculations.
+**Backend** (`backend/`) -- FastAPI server that fetches market data from Yahoo Finance via `yfinance`, computes portfolio returns, and calculates financial metrics (volatility, Sharpe ratio, max drawdown). Uses historical daily T-bill rates for the risk-free rate in Sharpe ratio calculations. Includes a 5-minute TTL cache (`cachetools`) for Yahoo Finance responses, rate limiting via `slowapi`, and input validation for tickers, dates, and portfolio limits.
 
 **Data source** -- All market data comes from Yahoo Finance: stock/ETF prices via ticker symbols, exchange rates via currency pairs (e.g., `EURUSD=X`), and the risk-free rate via `^IRX` (3-month T-bill index).
 
@@ -78,14 +80,4 @@ npm run dev
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
-- API Docs (Swagger): http://localhost:8000/docs
 
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/portfolio/analyze` | Analyze a single portfolio |
-| POST | `/api/portfolio/compare` | Compare multiple portfolios |
-| GET | `/api/portfolio/currencies` | List supported currencies |
-| GET | `/api/portfolio/symbols/search?q=` | Search for ticker symbols |
-| GET | `/health` | Health check |
