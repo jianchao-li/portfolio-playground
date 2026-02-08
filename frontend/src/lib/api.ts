@@ -52,11 +52,11 @@ async function fetchFromAPI<T>(
 }
 
 export async function fetchCurrencies(): Promise<CurrencyInfo[]> {
-  const response = await fetch(`${API_BASE}/api/portfolio/currencies`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch currencies');
-  }
-  return response.json();
+  return fetchFromAPI<CurrencyInfo[]>(
+    '/api/portfolio/currencies',
+    {},
+    'Failed to fetch currencies'
+  );
 }
 
 export async function analyzePortfolio(

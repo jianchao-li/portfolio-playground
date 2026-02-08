@@ -343,7 +343,6 @@ body {
   background: var(--bg-solid);
   color: var(--fg);
   font-family: inherit;
-  width: 260px;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
   width: 100%;

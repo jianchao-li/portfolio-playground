@@ -1,8 +1,17 @@
-from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from pydantic import BaseModel, Field, AfterValidator
+from typing import Annotated
 from datetime import date
 
 from app.services.currency import SUPPORTED_CURRENCIES
+
+
+def _validate_supported_currency(v: str) -> str:
+    if v not in SUPPORTED_CURRENCIES:
+        raise ValueError(f"Unsupported currency: {v}")
+    return v
+
+
+SupportedCurrency = Annotated[str, AfterValidator(_validate_supported_currency)]
 
 
 class Asset(BaseModel):
@@ -23,28 +32,14 @@ class AnalysisRequest(BaseModel):
     portfolio: Portfolio
     start_date: date
     end_date: date
-    currency: str = Field(default="USD", description="Currency for portfolio values")
-
-    @field_validator("currency")
-    @classmethod
-    def validate_currency(cls, v: str) -> str:
-        if v not in SUPPORTED_CURRENCIES:
-            raise ValueError(f"Unsupported currency: {v}")
-        return v
+    currency: SupportedCurrency = Field(default="USD", description="Currency for portfolio values")
 
 
 class ComparisonRequest(BaseModel):
     portfolios: list[Portfolio] = Field(..., min_length=1, description="Portfolios to compare")
     start_date: date
     end_date: date
-    currency: str = Field(default="USD", description="Currency for portfolio values")
-
-    @field_validator("currency")
-    @classmethod
-    def validate_currency(cls, v: str) -> str:
-        if v not in SUPPORTED_CURRENCIES:
-            raise ValueError(f"Unsupported currency: {v}")
-        return v
+    currency: SupportedCurrency = Field(default="USD", description="Currency for portfolio values")
 
 
 class PortfolioStats(BaseModel):

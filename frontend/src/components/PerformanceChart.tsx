@@ -76,7 +76,6 @@ interface PerformanceChartProps {
 
 export default function PerformanceChart({ data, currency = 'USD', currencies = [], highlightedIndex }: PerformanceChartProps) {
   const currencyName = currencies.find((c) => c.code === currency)?.name || 'US Dollar';
-  const currencyCode = currency;
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
 
   // Memoize chart data transformation - must be called before any early returns
@@ -178,7 +177,7 @@ export default function PerformanceChart({ data, currency = 'USD', currencies = 
             labelStyle={CHART_TOOLTIP_LABEL_STYLE}
             labelFormatter={formatFullDate}
             formatter={(value: number, name: string) => [
-              value != null ? `${value.toFixed(2)} ${currencyCode}` : '—',
+              value != null ? `${value.toFixed(2)} ${currency}` : '—',
               name
             ]}
           />

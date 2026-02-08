@@ -88,7 +88,6 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
     setInputValue(symbol);
     onChange(symbol);
     resetDropdown();
-    setIsOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

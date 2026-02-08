@@ -67,7 +67,7 @@ export default function StatsTable({ stats, onHighlight }: StatsTableProps) {
               <InfoTooltip term="Annualized Return" isOpen={openTooltip === 'Annualized Return'} onOpen={() => setOpenTooltip('Annualized Return')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>
-              <span className="header-full">Volatility</span><span className="header-short">Volatility</span>
+              Volatility
               <InfoTooltip term="Volatility" isOpen={openTooltip === 'Volatility'} onOpen={() => setOpenTooltip('Volatility')} onClose={() => setOpenTooltip(null)} />
             </th>
             <th>

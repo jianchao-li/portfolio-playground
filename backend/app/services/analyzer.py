@@ -4,7 +4,7 @@ import numpy as np
 from datetime import date, timedelta
 
 from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData
-from app.services.currency import CurrencyService
+from app.services.currency import CurrencyService, extract_close_prices
 
 
 class PortfolioAnalyzer:
@@ -58,22 +58,8 @@ class PortfolioAnalyzer:
             progress=False
         )
 
-        # Handle yfinance column format (may be MultiIndex or flat)
-        if isinstance(data.columns, pd.MultiIndex):
-            # New yfinance format: MultiIndex columns like ('Adj Close', 'SPY')
-            # Try 'Adj Close' first, fall back to 'Close' if not available
-            if 'Adj Close' in data.columns.get_level_values(0):
-                prices = data['Adj Close']
-            else:
-                prices = data['Close']
-        else:
-            # Single ticker or old format
-            if 'Adj Close' in data.columns:
-                prices = data['Adj Close']
-            elif 'Close' in data.columns:
-                prices = data['Close']
-            else:
-                raise ValueError(f"No price data found for symbols: {symbols}")
+        # Extract close prices using shared helper
+        prices = extract_close_prices(data, error_context=", ".join(symbols))
 
         # Ensure we have a DataFrame with symbol columns
         if isinstance(prices, pd.Series):

@@ -1,7 +1,6 @@
 import yfinance as yf
 import pandas as pd
 from datetime import date, timedelta
-from typing import Optional
 
 SUPPORTED_CURRENCIES = {
     "AED": {"name": "UAE Dirham", "flag": "\U0001f1e6\U0001f1ea", "ticker": "AED=X"},
@@ -51,19 +50,29 @@ SUPPORTED_CURRENCIES = {
 INVERTED_QUOTES = {"EUR", "GBP", "AUD", "NZD"}
 
 
+def extract_close_prices(data: pd.DataFrame, error_context: str = "symbols") -> pd.DataFrame | pd.Series:
+    """Extract close/adj-close prices from yfinance download data, handling MultiIndex columns."""
+    if isinstance(data.columns, pd.MultiIndex):
+        if 'Adj Close' in data.columns.get_level_values(0):
+            return data['Adj Close']
+        return data['Close']
+    if 'Adj Close' in data.columns:
+        return data['Adj Close']
+    if 'Close' in data.columns:
+        return data['Close']
+    raise ValueError(f"No price data found for {error_context}")
+
+
 class CurrencyService:
     """Service for fetching and applying currency exchange rates."""
 
     def fetch_exchange_rates(
         self, currency: str, start_date: date, end_date: date
-    ) -> Optional[pd.Series]:
+    ) -> pd.Series | None:
         """
         Fetch exchange rates for converting USD to target currency.
         Returns a Series indexed by date with conversion multipliers.
         """
-        if currency == "USD":
-            return None  # No conversion needed
-
         currency_info = SUPPORTED_CURRENCIES.get(currency)
         if not currency_info or not currency_info["ticker"]:
             raise ValueError(f"Unsupported currency: {currency}")
@@ -81,22 +90,11 @@ class CurrencyService:
         if data.empty:
             raise ValueError(f"No exchange rate data available for {currency}")
 
-        # Handle yfinance column format
-        if isinstance(data.columns, pd.MultiIndex):
-            if "Adj Close" in data.columns.get_level_values(0):
-                rates = data["Adj Close"]
-            else:
-                rates = data["Close"]
-            # Flatten if still multi-index
-            if isinstance(rates, pd.DataFrame):
-                rates = rates.iloc[:, 0]
-        else:
-            if "Adj Close" in data.columns:
-                rates = data["Adj Close"]
-            elif "Close" in data.columns:
-                rates = data["Close"]
-            else:
-                raise ValueError(f"No exchange rate data found for {currency}")
+        # Extract close prices using shared helper
+        rates = extract_close_prices(data, error_context=currency)
+        # Flatten to Series if single-ticker DataFrame
+        if isinstance(rates, pd.DataFrame):
+            rates = rates.iloc[:, 0]
 
         # Forward fill missing data
         rates = rates.ffill().dropna()
