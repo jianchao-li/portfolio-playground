@@ -142,10 +142,14 @@ class PortfolioAnalyzer:
 
     def analyze(self, portfolio: Portfolio, start_date: date, end_date: date,
                 currency: CurrencyCode = "USD",
-                rf_rates=None, exchange_rates=None) -> tuple[PortfolioStats, PerformanceData]:
+                rf_rates=None, exchange_rates=None,
+                all_prices=None) -> tuple[PortfolioStats, PerformanceData]:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
-        prices = self.fetch_prices(symbols, start_date, end_date)
+        if all_prices is not None:
+            prices = all_prices[symbols]
+        else:
+            prices = self.fetch_prices(symbols, start_date, end_date)
 
         # Normalize to $100 USD first
         portfolio_values = self.calculate_portfolio_values(portfolio, prices)

@@ -60,6 +60,13 @@ async def compare_portfolios(request: ComparisonRequest):
                 request.currency, request.start_date, request.end_date
             )
 
+        all_symbols = list({
+            asset.symbol
+            for portfolio in request.portfolios
+            for asset in portfolio.assets
+        })
+        all_prices = analyzer.fetch_prices(all_symbols, request.start_date, request.end_date)
+
         results = []
 
         for portfolio in request.portfolios:
@@ -69,7 +76,8 @@ async def compare_portfolios(request: ComparisonRequest):
                 end_date=request.end_date,
                 currency=request.currency,
                 rf_rates=rf_rates,
-                exchange_rates=exchange_rates
+                exchange_rates=exchange_rates,
+                all_prices=all_prices
             )
             results.append({
                 "stats": stats,
