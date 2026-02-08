@@ -65,8 +65,8 @@ class PortfolioAnalyzer:
         if isinstance(prices, pd.Series):
             prices = prices.to_frame(symbols[0])
 
-        # Validate: check for symbols with no price data at all
-        bad_symbols = [s for s in symbols if s in prices.columns and prices[s].isna().all()]
+        # Validate: check for symbols missing entirely or with no price data
+        bad_symbols = [s for s in symbols if s not in prices.columns or prices[s].isna().all()]
         if bad_symbols:
             raise ValueError(f"No price data found for: {', '.join(bad_symbols)}")
 
@@ -148,6 +148,9 @@ class PortfolioAnalyzer:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
         if all_prices is not None:
+            missing = [s for s in symbols if s not in all_prices.columns]
+            if missing:
+                raise ValueError(f"No price data found for: {', '.join(missing)}")
             subset = all_prices[symbols]
             bad_symbols = [s for s in symbols if subset[s].isna().all()]
             if bad_symbols:
