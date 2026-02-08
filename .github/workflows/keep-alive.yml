@@ -1,0 +1,9 @@
+name: Keep Render alive
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -sf https://portfolio-playground.onrender.com/api/portfolio/currencies
