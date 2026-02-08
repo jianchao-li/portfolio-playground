@@ -419,6 +419,10 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <footer className="copyright">
+        © 2026 Jianchao Li
+      </footer>
     </div>
   );
 }
