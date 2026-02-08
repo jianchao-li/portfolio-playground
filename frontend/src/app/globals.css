@@ -986,7 +986,11 @@ input[type="date"]:focus {
 
 /* Stats Table Row Highlighting */
 .stats-table tbody tr.stats-row {
-  transition: background-color 200ms ease;
+  transition: background-color 150ms ease;
+}
+
+.stats-table tbody tr.stats-row:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
 }
 
 /* Sparkline column */
