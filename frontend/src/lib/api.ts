@@ -41,14 +41,22 @@ async function fetchFromAPI<T>(
   options: RequestInit,
   errorMessage: string
 ): Promise<T> {
-  const response = await fetch(`${API_BASE}${endpoint}`, options);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, options);
+  } catch {
+    throw new Error('Unable to reach the server. Is the backend running?');
+  }
 
   if (!response.ok) {
-    const error = await response.json();
-    let detail = error.detail;
-    if (Array.isArray(detail)) {
-      detail = detail[0]?.msg?.replace(/^Value error, /, '') || errorMessage;
-    }
+    let detail: string | undefined;
+    try {
+      const error = await response.json();
+      detail = error.detail ?? error.error;
+      if (Array.isArray(detail)) {
+        detail = detail[0]?.msg?.replace(/^Value error, /, '') || errorMessage;
+      }
+    } catch {}
     throw new Error(detail || errorMessage);
   }
 
