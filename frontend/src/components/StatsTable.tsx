@@ -44,9 +44,10 @@ function InfoTooltip({ term, isOpen, onOpen, onClose }: InfoTooltipProps) {
 
 interface StatsTableProps {
   stats: PortfolioStats[];
+  onHighlight?: (index: number | null) => void;
 }
 
-export default function StatsTable({ stats }: StatsTableProps) {
+export default function StatsTable({ stats, onHighlight }: StatsTableProps) {
   const [openTooltip, setOpenTooltip] = useState<string | null>(null);
 
   return (
@@ -91,6 +92,8 @@ export default function StatsTable({ stats }: StatsTableProps) {
                     borderLeft: `4px solid ${color}`,
                     backgroundColor: `${color}08`,
                   }}
+                  onMouseEnter={() => onHighlight?.(index)}
+                  onMouseLeave={() => onHighlight?.(null)}
                 >
                   <td className="portfolio-name">{s.name}</td>
                   <td className={s.total_return >= 0 ? 'positive' : 'negative'}>

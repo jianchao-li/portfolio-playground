@@ -66,6 +66,7 @@ export default function Home() {
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioResult | null>(null);
 
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const hasLoadedInitial = useRef(false);
   const resultsRef = useRef<PortfolioResult[]>([]);
@@ -377,6 +378,7 @@ export default function Home() {
             <PerformanceChart
               data={chartData}
               currency={currency}
+              highlightedIndex={highlightedIndex}
             />
           </Suspense>
         </div>
@@ -385,6 +387,7 @@ export default function Home() {
           <Suspense fallback={<TableSkeleton />}>
             <StatsTable
               stats={statsData}
+              onHighlight={setHighlightedIndex}
             />
           </Suspense>
         </div>

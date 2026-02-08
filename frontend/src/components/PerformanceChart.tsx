@@ -70,9 +70,10 @@ function ChartInfoTooltip({ isOpen, onOpen, onClose, currencyName }: ChartInfoTo
 interface PerformanceChartProps {
   data: { name: string; performance: PerformanceData }[];
   currency?: CurrencyCode;
+  highlightedIndex?: number | null;
 }
 
-export default function PerformanceChart({ data, currency = 'USD' }: PerformanceChartProps) {
+export default function PerformanceChart({ data, currency = 'USD', highlightedIndex }: PerformanceChartProps) {
   const currencyName = CURRENCY_NAMES[currency] || 'US Dollar';
   const currencyCode = currency;
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
@@ -188,7 +189,8 @@ export default function PerformanceChart({ data, currency = 'USD' }: Performance
               dataKey={portfolio.name}
               stroke={getPortfolioColor(i)}
               dot={false}
-              strokeWidth={2}
+              strokeWidth={highlightedIndex != null ? (i === highlightedIndex ? 3 : 1.5) : 2}
+              strokeOpacity={highlightedIndex != null ? (i === highlightedIndex ? 1 : 0.2) : 1}
             />
           ))}
         </LineChart>
