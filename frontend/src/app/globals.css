@@ -103,7 +103,7 @@ body {
 .disclaimer-link {
   background: none;
   border: none;
-  color: var(--fg-secondary);
+  color: var(--primary-dark);
   cursor: pointer;
   font-size: inherit;
   padding: 0;
@@ -111,12 +111,12 @@ body {
   transition: color 0.2s, text-decoration 0.2s;
   vertical-align: baseline;
   line-height: inherit;
-  text-decoration: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .disclaimer-link:hover {
   color: var(--primary-dark);
-  text-decoration: underline;
 }
 
 .disclaimer-tooltip {

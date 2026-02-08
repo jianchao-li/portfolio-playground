@@ -220,7 +220,7 @@ export default function Home() {
                 onMouseEnter={() => setShowDisclaimer(true)}
                 onMouseLeave={() => setShowDisclaimer(false)}
               >
-                <span className="disclaimer-link">Disclaimer</span>
+                <span className="disclaimer-link">Please read our disclaimer</span>
                 {showDisclaimer && (
                   <div className="disclaimer-tooltip">
                     <div className="disclaimer-tooltip-content">
