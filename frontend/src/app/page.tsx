@@ -274,12 +274,60 @@ export default function Home() {
 
         {/* Row 2: Portfolio chips */}
         <div className="top-card-row2">
-          <button
-            onClick={openAddModal}
-            className="add-custom-btn"
-          >
-            + Custom Portfolio
-          </button>
+          <div className="portfolio-chips-custom">
+            <button
+              onClick={openAddModal}
+              className="add-custom-btn"
+            >
+              + Custom Portfolio
+            </button>
+
+            {/* Custom portfolios (not matching any preset) */}
+            {results
+              .filter((r) => !PRESET_PORTFOLIOS.some((p) => p.name === r.name))
+              .map((r) => {
+                const resultIndex = results.findIndex((res) => res.name === r.name);
+                const color = getPortfolioColor(resultIndex);
+                return (
+                  <div
+                    key={r.name}
+                    className="portfolio-chip-wrapper"
+                    onMouseEnter={() => setOpenPopover(r.name)}
+                    onMouseLeave={() => setOpenPopover(null)}
+                  >
+                    <span
+                      className="portfolio-chip-unified active"
+                      style={{
+                        borderColor: color,
+                        backgroundColor: `${color}15`,
+                        color: color,
+                      }}
+                    >
+                      {r.name}
+                      <button
+                        className="chip-remove"
+                        onClick={() => removePortfolio(r.name)}
+                        style={{ color: color }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                    {openPopover === r.name && (
+                      <PortfolioPopover
+                        name={r.name}
+                        assets={r.assets}
+                        onEdit={() => handleEditClick(r)}
+                        onRemove={() => removePortfolio(r.name)}
+                        onClose={() => setOpenPopover(null)}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+
+          <span className="chips-divider" />
+
           <div className="portfolio-chips-right">
           <span className="preset-label">Presets:</span>
           {PRESET_PORTFOLIOS.map((preset) => {
@@ -345,49 +393,6 @@ export default function Home() {
               </div>
             );
           })}
-
-          {/* Custom portfolios (not matching any preset) */}
-          {results
-            .filter((r) => !PRESET_PORTFOLIOS.some((p) => p.name === r.name))
-            .map((r) => {
-              const resultIndex = results.findIndex((res) => res.name === r.name);
-              const color = getPortfolioColor(resultIndex);
-              return (
-                <div
-                  key={r.name}
-                  className="portfolio-chip-wrapper"
-                  onMouseEnter={() => setOpenPopover(r.name)}
-                  onMouseLeave={() => setOpenPopover(null)}
-                >
-                  <span
-                    className="portfolio-chip-unified active"
-                    style={{
-                      borderColor: color,
-                      backgroundColor: `${color}15`,
-                      color: color,
-                    }}
-                  >
-                    {r.name}
-                    <button
-                      className="chip-remove"
-                      onClick={() => removePortfolio(r.name)}
-                      style={{ color: color }}
-                    >
-                      ×
-                    </button>
-                  </span>
-                  {openPopover === r.name && (
-                    <PortfolioPopover
-                      name={r.name}
-                      assets={r.assets}
-                      onEdit={() => handleEditClick(r)}
-                      onRemove={() => removePortfolio(r.name)}
-                      onClose={() => setOpenPopover(null)}
-                    />
-                  )}
-                </div>
-              );
-            })}
           </div>
         </div>
       </div>

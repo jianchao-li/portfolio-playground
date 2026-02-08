@@ -81,10 +81,19 @@ body {
 
 .top-card-row2 {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   border-top: 1px solid var(--border);
+}
+
+.portfolio-chips-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Disclaimer Text Link & Tooltip */
@@ -161,13 +170,21 @@ body {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  margin-left: auto;
+  flex: 1.222;
+  min-width: 0;
 }
 
 .preset-label {
   font-size: 0.85rem;
   color: var(--fg-muted);
   font-weight: 500;
+}
+
+.chips-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  flex-shrink: 0;
 }
 
 /* Unified Portfolio Chip */
