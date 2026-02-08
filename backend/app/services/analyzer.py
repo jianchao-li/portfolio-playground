@@ -2,9 +2,16 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
+import threading
+from cachetools import TTLCache
 
 from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData
 from app.services.currency import CurrencyService, extract_close_prices
+
+_prices_cache = TTLCache(maxsize=32, ttl=300)
+_prices_lock = threading.Lock()
+_rf_cache = TTLCache(maxsize=16, ttl=300)
+_rf_lock = threading.Lock()
 
 
 class PortfolioAnalyzer:
@@ -15,6 +22,11 @@ class PortfolioAnalyzer:
 
     def fetch_risk_free_rates(self, start_date: date, end_date: date) -> pd.Series | None:
         """Fetch historical daily 3-month T-bill rates for date range."""
+        key = (start_date, end_date)
+        with _rf_lock:
+            if key in _rf_cache:
+                return _rf_cache[key]
+
         adjusted_start = start_date - timedelta(days=5)
 
         try:
@@ -34,11 +46,15 @@ class PortfolioAnalyzer:
                 rates = rates.ffill().dropna()
                 rates = rates[rates.index >= pd.Timestamp(start_date)]
                 rates = rates[rates.index <= pd.Timestamp(end_date)]
+                with _rf_lock:
+                    _rf_cache[key] = rates
                 return rates
         except Exception:
             pass
 
         # Fallback: return None to use constant rate
+        with _rf_lock:
+            _rf_cache[key] = None
         return None
 
     def fetch_prices(self, symbols: list[str], start_date: date, end_date: date,
@@ -48,6 +64,11 @@ class PortfolioAnalyzer:
         If batch=True, skip cross-column dropna so each portfolio can apply
         it on its own subset (avoids a newer ticker trimming dates for all).
         """
+        key = (frozenset(symbols), start_date, end_date, batch)
+        with _prices_lock:
+            if key in _prices_cache:
+                return _prices_cache[key]
+
         # Add buffer for weekend/holiday adjustments
         adjusted_start = start_date - timedelta(days=5)
 
@@ -80,6 +101,8 @@ class PortfolioAnalyzer:
         if prices.empty:
             raise ValueError("No price data available for the selected date range")
 
+        with _prices_lock:
+            _prices_cache[key] = prices
         return prices
 
     def calculate_portfolio_values(self, portfolio: Portfolio, prices: pd.DataFrame) -> pd.Series:

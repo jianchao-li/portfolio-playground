@@ -1,6 +1,11 @@
 import yfinance as yf
 import pandas as pd
 from datetime import date, timedelta
+import threading
+from cachetools import TTLCache
+
+_fx_cache = TTLCache(maxsize=16, ttl=300)
+_fx_lock = threading.Lock()
 
 SUPPORTED_CURRENCIES = {
     "AED": {"name": "UAE Dirham", "flag": "\U0001f1e6\U0001f1ea", "ticker": "AED=X"},
@@ -73,6 +78,11 @@ class CurrencyService:
         Fetch exchange rates for converting USD to target currency.
         Returns a Series indexed by date with conversion multipliers.
         """
+        key = (currency, start_date, end_date)
+        with _fx_lock:
+            if key in _fx_cache:
+                return _fx_cache[key]
+
         currency_info = SUPPORTED_CURRENCIES.get(currency)
         if not currency_info or not currency_info["ticker"]:
             raise ValueError(f"Unsupported currency: {currency}")
@@ -110,6 +120,8 @@ class CurrencyService:
         if currency in INVERTED_QUOTES:
             rates = 1 / rates
 
+        with _fx_lock:
+            _fx_cache[key] = rates
         return rates
 
 
