@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { PortfolioStats } from '@/lib/api';
+import { useState, useMemo } from 'react';
+import { LineChart, Line } from 'recharts';
+import { PortfolioStats, PerformanceData } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 import { formatPercent } from '@/lib/formatting';
-import { getHighlightState } from '@/lib/utils';
 
 const METRIC_DEFINITIONS: Record<string, string> = {
   'Total Return': 'The overall gain or loss of an investment over the selected period, including capital appreciation and dividends, expressed as a percentage.',
@@ -43,13 +43,36 @@ function InfoTooltip({ term, isOpen, onOpen, onClose }: InfoTooltipProps) {
   );
 }
 
-interface StatsTableProps {
-  stats: PortfolioStats[];
-  highlightedPortfolio?: string | null;
-  onPortfolioHover?: (name: string | null) => void;
+interface PortfolioData {
+  stats: PortfolioStats;
+  performance: PerformanceData;
 }
 
-export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHover }: StatsTableProps) {
+interface StatsTableProps {
+  data: PortfolioData[];
+}
+
+function Sparkline({ performance, color }: { performance: PerformanceData; color: string }) {
+  const chartData = useMemo(() =>
+    performance.values.map((v) => ({ v })),
+    [performance.values]
+  );
+
+  return (
+    <LineChart width={100} height={32} data={chartData}>
+      <Line
+        type="monotone"
+        dataKey="v"
+        stroke={color}
+        strokeWidth={1.5}
+        dot={false}
+        isAnimationActive={false}
+      />
+    </LineChart>
+  );
+}
+
+export default function StatsTable({ data }: StatsTableProps) {
   const [openTooltip, setOpenTooltip] = useState<string | null>(null);
 
   return (
@@ -59,6 +82,7 @@ export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHov
         <thead>
           <tr>
             <th>Portfolio</th>
+            <th className="sparkline-header"></th>
             <th>
               Total Return
               <InfoTooltip term="Total Return" isOpen={openTooltip === 'Total Return'} onOpen={() => setOpenTooltip('Total Return')} onClose={() => setOpenTooltip(null)} />
@@ -82,23 +106,23 @@ export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHov
           </tr>
         </thead>
         <tbody>
-          {stats.length > 0 ? (
-            stats.map((s, index) => {
+          {data.length > 0 ? (
+            data.map(({ stats: s, performance }, index) => {
               const color = getPortfolioColor(index);
-              const { isHighlighted, isDimmed } = getHighlightState(s.name, highlightedPortfolio ?? null);
 
               return (
                 <tr
                   key={s.name}
-                  className={`stats-row ${isHighlighted ? 'highlighted' : ''} ${isDimmed ? 'dimmed' : ''}`}
+                  className="stats-row"
                   style={{
                     borderLeft: `4px solid ${color}`,
-                    backgroundColor: isHighlighted ? `${color}15` : `${color}08`,
+                    backgroundColor: `${color}08`,
                   }}
-                  onMouseEnter={() => onPortfolioHover?.(s.name)}
-                  onMouseLeave={() => onPortfolioHover?.(null)}
                 >
                   <td className="portfolio-name">{s.name}</td>
+                  <td className="sparkline-cell">
+                    <Sparkline performance={performance} color={color} />
+                  </td>
                   <td className={s.total_return >= 0 ? 'positive' : 'negative'}>
                     {formatPercent(s.total_return)}
                   </td>
@@ -115,7 +139,7 @@ export default function StatsTable({ stats, highlightedPortfolio, onPortfolioHov
             })
           ) : (
             <tr>
-              <td colSpan={6} className="empty-row">
+              <td colSpan={7} className="empty-row">
                 No portfolios selected
               </td>
             </tr>

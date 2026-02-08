@@ -65,7 +65,7 @@ export default function Home() {
   const [newPortfolioName, setNewPortfolioName] = useState('');
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioResult | null>(null);
-  const [highlightedPortfolio, setHighlightedPortfolio] = useState<string | null>(null);
+
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const hasLoadedInitial = useRef(false);
   const resultsRef = useRef<PortfolioResult[]>([]);
@@ -201,7 +201,10 @@ export default function Home() {
     performance: r.performance,
   })), [results]);
 
-  const statsData = useMemo(() => results.map((r) => r.stats), [results]);
+  const statsData = useMemo(() => results.map((r) => ({
+    stats: r.stats,
+    performance: r.performance,
+  })), [results]);
 
   return (
     <div className="container">
@@ -375,8 +378,6 @@ export default function Home() {
         <Suspense fallback={<ChartSkeleton />}>
           <PerformanceChart
             data={chartData}
-            highlightedPortfolio={highlightedPortfolio}
-            onPortfolioHover={setHighlightedPortfolio}
             currency={currency}
           />
         </Suspense>
@@ -386,9 +387,7 @@ export default function Home() {
       <div className="results-card">
         <Suspense fallback={<TableSkeleton />}>
           <StatsTable
-            stats={statsData}
-            highlightedPortfolio={highlightedPortfolio}
-            onPortfolioHover={setHighlightedPortfolio}
+            data={statsData}
           />
         </Suspense>
       </div>
