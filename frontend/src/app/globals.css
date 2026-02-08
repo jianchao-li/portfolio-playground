@@ -92,7 +92,6 @@ body {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  flex: 1;
   min-width: 0;
 }
 
@@ -169,9 +168,9 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
-  flex: 1.222;
-  min-width: 0;
+  flex-wrap: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .preset-label {
