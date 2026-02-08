@@ -55,14 +55,17 @@ class AnalysisRequest(BaseModel):
 
 
 class ComparisonRequest(BaseModel):
-    portfolios: list[Portfolio] = Field(..., min_length=1, description="Portfolios to compare")
+    portfolios: list[Portfolio] = Field(..., min_length=1, max_length=20, description="Portfolios to compare")
     start_date: date
     end_date: date
     currency: SupportedCurrency = Field(default="USD", description="Currency for portfolio values")
 
     @model_validator(mode='after')
-    def validate_dates(self) -> Self:
+    def validate_dates_and_assets(self) -> Self:
         _validate_date_range(self.start_date, self.end_date)
+        total_assets = sum(len(p.assets) for p in self.portfolios)
+        if total_assets > 50:
+            raise ValueError(f"Total assets across all portfolios cannot exceed 50 (got {total_assets})")
         return self
 
 
