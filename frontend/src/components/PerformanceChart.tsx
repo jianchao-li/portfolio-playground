@@ -85,10 +85,26 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
     if (!data.length || !data[0]?.performance?.dates?.length) {
       return [];
     }
-    return data[0].performance.dates.map((date, i) => {
+
+    // Build a date→value map for each portfolio for O(1) lookups
+    const portfolioMaps = data.map(p => {
+      const map = new Map<string, number>();
+      p.performance.dates.forEach((date, i) => map.set(date, p.performance.values[i]));
+      return map;
+    });
+
+    // Collect union of all dates across all portfolios
+    const allDatesSet = new Set<string>();
+    data.forEach(p => p.performance.dates.forEach(d => allDatesSet.add(d)));
+    const allDates = Array.from(allDatesSet).sort();
+
+    return allDates.map(date => {
       const point: Record<string, string | number> = { date };
-      data.forEach((portfolio) => {
-        point[portfolio.name] = portfolio.performance.values[i];
+      data.forEach((p, i) => {
+        const value = portfolioMaps[i].get(date);
+        if (value !== undefined) {
+          point[p.name] = value;
+        }
       });
       return point;
     });
@@ -165,7 +181,10 @@ export default function PerformanceChart({ data, highlightedPortfolio, onPortfol
             itemStyle={CHART_TOOLTIP_ITEM_STYLE}
             labelStyle={CHART_TOOLTIP_LABEL_STYLE}
             labelFormatter={formatFullDate}
-            formatter={(value: number, name: string) => [`${value.toFixed(2)} ${currencyCode}`, name]}
+            formatter={(value: number, name: string) => [
+              value != null ? `${value.toFixed(2)} ${currencyCode}` : '—',
+              name
+            ]}
           />
           <Legend
             onMouseEnter={(e) => onPortfolioHover?.(e.dataKey as string)}
