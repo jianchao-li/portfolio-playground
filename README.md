@@ -1,8 +1,8 @@
 # Portfolio Playground
 
-A web application for analyzing and comparing investment portfolio performance. Build custom portfolios from real market data, visualize historical returns, and compare key risk/return metrics side by side.
+A web application for analyzing and comparing investment portfolio performance. Build custom portfolios from real market data, visualize historical returns, and compare key risk/return metrics side by side. See [this blog post](https://jianchao-li.github.io/post/vibe-coding-portfolio-playground/) for an introduction and demo video.
 
-<video src="demo.mov" controls width="100%"></video>
+![Portfolio Playground](featured.png)
 
 ## Features
 
