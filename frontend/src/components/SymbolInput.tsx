@@ -60,7 +60,7 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
     try {
       const data = await searchSymbols(query);
       setResults(data);
-      setIsOpen(data.length > 0);
+      setIsOpen(true);
       setHighlightIndex(-1);
     } catch (err) {
       setResults([]);
@@ -74,6 +74,7 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.toUpperCase();
     setInputValue(newValue);
+    onChange('');
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -136,10 +137,12 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
         autoComplete="off"
       />
       {isLoading && <span className="symbol-loading">...</span>}
-      {isOpen && (error || results.length > 0) && (
+      {isOpen && !isLoading && (error || results.length > 0 || inputValue.trim().length > 0) && (
         <div ref={dropdownRef} className="symbol-dropdown">
           {error ? (
             <div className="symbol-dropdown-error">{error}</div>
+          ) : results.length === 0 ? (
+            <div className="symbol-dropdown-error">No matching symbols found</div>
           ) : (
             results.map((result, index) => (
               <div

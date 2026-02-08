@@ -36,6 +36,8 @@ def analyze_portfolio(request: AnalysisRequest):
             currency=request.currency
         )
         return AnalysisResponse(stats=stats, performance=performance, currency=request.currency)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -87,6 +89,8 @@ def compare_portfolios(request: ComparisonRequest):
             })
 
         return {"portfolios": results}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

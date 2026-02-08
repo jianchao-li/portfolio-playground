@@ -65,12 +65,20 @@ class PortfolioAnalyzer:
         if isinstance(prices, pd.Series):
             prices = prices.to_frame(symbols[0])
 
+        # Validate: check for symbols with no price data at all
+        bad_symbols = [s for s in symbols if s in prices.columns and prices[s].isna().all()]
+        if bad_symbols:
+            raise ValueError(f"No price data found for: {', '.join(bad_symbols)}")
+
         # Forward fill missing data, then filter to requested range
         prices = prices.ffill()
         if not batch:
             prices = prices.dropna()
         prices = prices[prices.index >= pd.Timestamp(start_date)]
         prices = prices[prices.index <= pd.Timestamp(end_date)]
+
+        if prices.empty:
+            raise ValueError("No price data available for the selected date range")
 
         return prices
 
@@ -140,7 +148,13 @@ class PortfolioAnalyzer:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
         if all_prices is not None:
-            prices = all_prices[symbols].dropna()
+            subset = all_prices[symbols]
+            bad_symbols = [s for s in symbols if subset[s].isna().all()]
+            if bad_symbols:
+                raise ValueError(f"No price data found for: {', '.join(bad_symbols)}")
+            prices = subset.dropna()
+            if prices.empty:
+                raise ValueError("No price data available for the selected date range")
         else:
             prices = self.fetch_prices(symbols, start_date, end_date)
 
