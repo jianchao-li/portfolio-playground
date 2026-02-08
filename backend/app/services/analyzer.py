@@ -41,8 +41,13 @@ class PortfolioAnalyzer:
         # Fallback: return None to use constant rate
         return None
 
-    def fetch_prices(self, symbols: list[str], start_date: date, end_date: date) -> pd.DataFrame:
-        """Fetch adjusted close prices for given symbols."""
+    def fetch_prices(self, symbols: list[str], start_date: date, end_date: date,
+                     batch: bool = False) -> pd.DataFrame:
+        """Fetch adjusted close prices for given symbols.
+
+        If batch=True, skip cross-column dropna so each portfolio can apply
+        it on its own subset (avoids a newer ticker trimming dates for all).
+        """
         # Add buffer for weekend/holiday adjustments
         adjusted_start = start_date - timedelta(days=5)
 
@@ -75,7 +80,9 @@ class PortfolioAnalyzer:
             prices = prices.to_frame(symbols[0])
 
         # Forward fill missing data, then filter to requested range
-        prices = prices.ffill().dropna()
+        prices = prices.ffill()
+        if not batch:
+            prices = prices.dropna()
         prices = prices[prices.index >= pd.Timestamp(start_date)]
         prices = prices[prices.index <= pd.Timestamp(end_date)]
 
@@ -147,7 +154,7 @@ class PortfolioAnalyzer:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
         if all_prices is not None:
-            prices = all_prices[symbols]
+            prices = all_prices[symbols].dropna()
         else:
             prices = self.fetch_prices(symbols, start_date, end_date)
 

@@ -65,7 +65,8 @@ async def compare_portfolios(request: ComparisonRequest):
             for portfolio in request.portfolios
             for asset in portfolio.assets
         })
-        all_prices = analyzer.fetch_prices(all_symbols, request.start_date, request.end_date)
+        all_prices = analyzer.fetch_prices(all_symbols, request.start_date, request.end_date,
+                                           batch=True)
 
         results = []
 
