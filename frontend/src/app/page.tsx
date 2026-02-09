@@ -242,7 +242,7 @@ export default function Home() {
             <h1>Portfolio Playground</h1>
             <div className="header-subtitle">
               <span>Build, analyze, and compare investment portfolios</span>
-              <a className="header-link header-link-about" href="https://jianchao-li.github.io/post/vibe-coding-portfolio-playground/" target="_blank" rel="noopener noreferrer">About</a>
+              <a className="header-link header-link-about" href="https://jianchao-li.github.io/post/vibe-coding-portfolio-playground/" target="_blank" rel="noopener noreferrer">⭐ About</a>
               <a className="header-link header-link-source" href="https://github.com/jianchao-li/portfolio-playground" target="_blank" rel="noopener noreferrer">Source Code</a>
               <span
                 className="disclaimer-wrapper"
@@ -432,7 +432,7 @@ export default function Home() {
           )}
           {loading && results.length === 0 && (
             <div className="first-load-message">
-              Fetching live market data — first load may take a moment
+              Fetching market data — first load may take a moment
             </div>
           )}
           <Suspense fallback={<ChartSkeleton />}>
