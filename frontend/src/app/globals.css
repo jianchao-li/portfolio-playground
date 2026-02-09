@@ -510,7 +510,7 @@ body {
 }
 
 .results-card-chart {
-  flex: 1.2;
+  flex: 1;
   min-width: 0;
 }
 
