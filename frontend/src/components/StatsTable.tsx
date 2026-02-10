@@ -98,16 +98,26 @@ export default function StatsTable({ stats, onHighlight }: StatsTableProps) {
                 >
                   <td className="portfolio-name">{s.name}</td>
                   <td className={s.total_return >= 0 ? 'positive' : 'negative'}>
-                    {formatPercent(s.total_return)}
+                    <span className={`stat-pill ${s.total_return >= 0 ? 'positive' : 'negative'}`}>
+                      {formatPercent(s.total_return)}
+                    </span>
                   </td>
                   <td className={s.annualized_return >= 0 ? 'positive' : 'negative'}>
-                    {formatPercent(s.annualized_return)}
+                    <span className={`stat-pill ${s.annualized_return >= 0 ? 'positive' : 'negative'}`}>
+                      {formatPercent(s.annualized_return)}
+                    </span>
                   </td>
-                  <td>{formatPercent(s.volatility)}</td>
+                  <td><span className="stat-pill neutral">{formatPercent(s.volatility)}</span></td>
                   <td className={s.sharpe_ratio >= 1 ? 'good' : ''}>
-                    {s.sharpe_ratio.toFixed(2)}
+                    <span className={`stat-pill ${s.sharpe_ratio >= 1 ? 'positive' : 'neutral'}`}>
+                      {s.sharpe_ratio.toFixed(2)}
+                    </span>
                   </td>
-                  <td className="negative">{formatPercent(s.max_drawdown)}</td>
+                  <td className="negative">
+                    <span className="stat-pill negative">
+                      {formatPercent(s.max_drawdown)}
+                    </span>
+                  </td>
                 </tr>
               );
             })

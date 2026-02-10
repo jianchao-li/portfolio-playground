@@ -316,8 +316,9 @@ export default function Home() {
                       className="portfolio-chip-unified active"
                       style={{
                         borderColor: color,
-                        backgroundColor: `${color}15`,
+                        background: `linear-gradient(135deg, ${color}15, ${color}08)`,
                         color: color,
+                        boxShadow: `0 2px 8px ${color}25`,
                       }}
                     >
                       <span
@@ -372,8 +373,9 @@ export default function Home() {
                     className="portfolio-chip-unified active"
                     style={{
                       borderColor: color,
-                      backgroundColor: `${color}15`,
+                      background: `linear-gradient(135deg, ${color}15, ${color}08)`,
                       color: color,
+                      boxShadow: `0 2px 8px ${color}25`,
                     }}
                   >
                     ✓ {preset.name}
