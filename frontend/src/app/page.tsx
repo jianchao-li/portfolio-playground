@@ -242,7 +242,7 @@ export default function Home() {
             <h1>Portfolio Playground</h1>
             <div className="header-subtitle">
               <span>Build, analyze, and compare investment portfolios</span>
-              <a className="header-link header-link-about" href="https://jianchao-li.github.io/projects/portfolio-playground/" target="_blank" rel="noopener noreferrer">⭐ About</a>
+              <a className="header-link header-link-about" href="https://jianchao.xyz/projects/portfolio-playground/" target="_blank" rel="noopener noreferrer">⭐ About</a>
               <a className="header-link header-link-source" href="https://github.com/jianchao-li/portfolio-playground" target="_blank" rel="noopener noreferrer">Source Code</a>
               <span
                 className="disclaimer-wrapper"
