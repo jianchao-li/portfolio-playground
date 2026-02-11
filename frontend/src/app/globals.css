@@ -1199,11 +1199,53 @@ input[type="date"]:focus {
   box-shadow: var(--shadow);
 }
 
-.first-load-message {
+/* Full-page loading overlay (first load) */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-card {
+  background: var(--card-bg);
+  padding: 2.5rem 3rem;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--border);
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0;
+}
+
+.loading-subtext {
+  font-size: 0.85rem;
   color: var(--fg-secondary);
-  font-size: 0.9rem;
-  padding: 1rem;
+  margin: 0;
 }
 
 @keyframes shimmer {

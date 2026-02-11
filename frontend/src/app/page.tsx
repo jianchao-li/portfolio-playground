@@ -432,11 +432,6 @@ export default function Home() {
               <span className="results-loading-indicator">Loading…</span>
             </div>
           )}
-          {loading && results.length === 0 && (
-            <div className="first-load-message">
-              Fetching market data — first load may take a moment
-            </div>
-          )}
           <Suspense fallback={<ChartSkeleton />}>
             <PerformanceChart
               data={chartData}
@@ -480,6 +475,17 @@ export default function Home() {
               initialAssets={editingPortfolio?.assets}
               submitLabel={editingPortfolio ? 'Update Portfolio' : undefined}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Full-page loading overlay for first load */}
+      {loading && results.length === 0 && (
+        <div className="loading-overlay">
+          <div className="loading-card">
+            <div className="loading-spinner" />
+            <p className="loading-text">Fetching market data</p>
+            <p className="loading-subtext">First load may take a moment</p>
           </div>
         </div>
       )}
