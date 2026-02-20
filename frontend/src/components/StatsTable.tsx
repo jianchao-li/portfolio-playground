@@ -107,9 +107,9 @@ export default function StatsTable({ stats, onHighlight }: StatsTableProps) {
                       {formatPercent(s.annualized_return)}
                     </span>
                   </td>
-                  <td><span className="stat-pill neutral">{formatPercent(s.volatility)}</span></td>
+                  <td><span className="stat-pill">{formatPercent(s.volatility)}</span></td>
                   <td className={s.sharpe_ratio >= 1 ? 'good' : ''}>
-                    <span className={`stat-pill ${s.sharpe_ratio >= 1 ? 'positive' : 'neutral'}`}>
+                    <span className={`stat-pill${s.sharpe_ratio >= 1 ? ' positive' : ''}`}>
                       {s.sharpe_ratio.toFixed(2)}
                     </span>
                   </td>

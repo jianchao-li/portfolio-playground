@@ -150,6 +150,7 @@ export default function SymbolInput({ value, onChange, placeholder }: SymbolInpu
                 className={`symbol-dropdown-item ${index === highlightIndex ? 'highlighted' : ''}`}
                 onClick={() => selectSymbol(result.symbol)}
                 onMouseEnter={() => setHighlightIndex(index)}
+                role="option"
               >
                 <span className="symbol-ticker">{result.symbol}</span>
                 <span className="symbol-name">{result.name || ''}</span>

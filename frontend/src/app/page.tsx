@@ -331,6 +331,7 @@ export default function Home() {
                         className="chip-remove"
                         onClick={() => removePortfolio(r.name)}
                         style={{ color: color }}
+                        aria-label={`Remove ${r.name}`}
                       >
                         ×
                       </button>
@@ -348,8 +349,6 @@ export default function Home() {
                 );
               })}
           </div>
-
-          <span className="chips-divider" />
 
           <div className="portfolio-chips-right">
           <span className="preset-label">Presets:</span>
@@ -461,7 +460,7 @@ export default function Home() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingPortfolio ? 'Edit Portfolio' : 'Add Custom Portfolio'}</h2>
-              <button className="modal-close" onClick={() => {
+              <button className="modal-close" aria-label="Close" onClick={() => {
                 setShowModal(false);
                 setEditingPortfolio(null);
               }}>

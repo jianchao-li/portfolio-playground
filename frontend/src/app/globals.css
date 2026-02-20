@@ -215,12 +215,8 @@ body {
 
 .preset-label {
   font-size: 0.85rem;
-  color: var(--fg-muted);
+  color: var(--fg-secondary);
   font-weight: 500;
-}
-
-.chips-divider {
-  display: none;
 }
 
 /* Unified Portfolio Chip */
@@ -385,7 +381,7 @@ body {
 }
 
 .currency-trigger-name {
-  color: var(--fg-muted);
+  color: var(--fg-secondary);
   font-size: 0.85rem;
 }
 

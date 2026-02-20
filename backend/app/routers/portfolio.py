@@ -1,5 +1,6 @@
 import logging
 
+import httpx
 from fastapi import APIRouter, HTTPException, Request
 
 from app.limiter import limiter
@@ -102,8 +103,6 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
 @limiter.limit("30/minute")
 async def search_symbols(request: Request, q: str):
     """Search for ticker symbols using Yahoo Finance search API."""
-    import httpx
-
     if not q or len(q) < 1:
         return []
 

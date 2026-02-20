@@ -1,8 +1,10 @@
-import yfinance as yf
-import pandas as pd
-import numpy as np
-from datetime import date, timedelta
+import logging
 import threading
+from datetime import date, timedelta
+
+import numpy as np
+import pandas as pd
+import yfinance as yf
 from cachetools import TTLCache
 
 from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData
@@ -49,8 +51,8 @@ class PortfolioAnalyzer:
                 with _rf_lock:
                     _rf_cache[key] = rates
                 return rates
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning("Failed to fetch risk-free rates: %s", e)
 
         # Fallback: return None to use constant rate
         with _rf_lock:
