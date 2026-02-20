@@ -15,27 +15,29 @@ A web application for analyzing and comparing investment portfolio performance. 
 
 ## Architecture
 
-```
-┌─────────────────────┐       ┌──────────────────────┐
-│     Frontend        │       │      Backend         │
-│  Next.js / React    │──────▶│  Python / FastAPI     │
-│  TypeScript         │  API  │  Pandas / NumPy       │
-│  Recharts           │◀──────│  yfinance             │
-└─────────────────────┘       └──────────┬───────────┘
-                                         │
-                                         ▼
-                              ┌──────────────────────┐
-                              │   Yahoo Finance API   │
-                              │  Prices, FX rates,    │
-                              │  T-bill rates, search │
-                              └──────────────────────┘
-```
+![Architecture](architecture.png)
 
-**Frontend** (`frontend/`) -- Next.js 14 with TypeScript and Recharts for charting. Handles portfolio construction UI, date/currency selection, and data visualization.
+**Frontend** (`frontend/`) -- Next.js 14 with React 18 and TypeScript. The main single-page app (`page.tsx`) orchestrates several components:
+- `PerformanceChart` (Recharts) -- Normalized line chart comparing portfolio performance
+- `StatsTable` -- Side-by-side financial metrics comparison
+- `PortfolioBuilder` / `PortfolioPopover` -- Portfolio construction and asset allocation views
+- `CurrencySelector` / `SymbolInput` -- Currency picker and ticker autocomplete search
 
-**Backend** (`backend/`) -- FastAPI server that fetches market data from Yahoo Finance via `yfinance`, computes portfolio returns, and calculates financial metrics (volatility, Sharpe ratio, max drawdown). Uses historical daily T-bill rates for the risk-free rate in Sharpe ratio calculations. Includes a 5-minute TTL cache (`cachetools`) for Yahoo Finance responses, rate limiting via `slowapi`, and input validation for tickers, dates, and portfolio limits.
+The API client (`lib/api.ts`) handles all backend communication with `fetch()`, `AbortController` for request cancellation, and error handling. Shared utilities include color schemes, formatting helpers, theme configuration, and custom hooks like `useClickOutside`.
 
-**Data source** -- All market data comes from Yahoo Finance: stock/ETF prices via ticker symbols, exchange rates via currency pairs (e.g., `EURUSD=X`), and the risk-free rate via `^IRX` (3-month T-bill index).
+**Backend** (`backend/`) -- FastAPI server running on Uvicorn with the following layers:
+- *Middleware* -- CORS support and SlowAPI rate limiting
+- *Router* (`/api/portfolio`) -- `POST /analyze`, `POST /compare`, `GET /currencies`, `GET /symbols/search`
+- *Services* -- `PortfolioAnalyzer` computes returns and metrics; `CurrencyService` handles FX conversions
+- *Cache* -- In-memory TTL cache (5 min) for prices, risk-free rates, and FX rates
+
+**External APIs** (Yahoo Finance) -- The backend fetches data via:
+- `yfinance` library -- Stock/ETF historical prices
+- `httpx` -- Symbol search via Yahoo Search API
+- `^IRX` ticker -- 3-month T-bill index for risk-free rate
+- Currency pairs (e.g., `EURUSD=X`) -- Real-time FX rates
+
+**Keep-Alive** -- A GitHub Actions cron job pings `GET /health` every 14 minutes to prevent Render free-tier cold starts.
 
 ## Getting Started
 
