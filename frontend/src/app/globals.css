@@ -913,6 +913,7 @@ input[type="date"]:focus {
   box-shadow: var(--shadow-hover);
   padding: 0.75rem 1rem;
   text-align: left;
+  white-space: normal;
 }
 
 .info-tooltip-content strong {
