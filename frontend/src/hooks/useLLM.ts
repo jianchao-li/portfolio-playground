@@ -68,9 +68,9 @@ export function useLLM() {
   const [error, setError] = useState<string | null>(null);
   const [supportsWebGPU, setSupportsWebGPU] = useState<boolean | null>(null);
 
-  // Check WebGPU support on mount
+  // Check WebGPU support on mount and auto-load model if supported
   useEffect(() => {
-    const checkWebGPU = async () => {
+    const checkWebGPUAndInit = async () => {
       if (typeof window === 'undefined' || typeof navigator === 'undefined') {
         setSupportsWebGPU(false);
         return;
@@ -85,13 +85,48 @@ export function useLLM() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const gpu = (navigator as any).gpu;
         const adapter = await gpu.requestAdapter();
-        setSupportsWebGPU(adapter !== null);
+        const supported = adapter !== null;
+        setSupportsWebGPU(supported);
+
+        // Auto-load model if WebGPU is supported
+        if (supported && !engineRef.current && status === 'idle') {
+          setStatus('loading');
+          setError(null);
+          setProgress({ text: 'Loading AI model (~900MB, may take a while)...', progress: 0 });
+
+          try {
+            const { CreateMLCEngine } = await import('@mlc-ai/web-llm');
+
+            const engine = await CreateMLCEngine(MODEL_ID, {
+              initProgressCallback: (report) => {
+                let text = report.text;
+                if (text.toLowerCase().includes('start to fetch') || text.toLowerCase().includes('fetching param')) {
+                  text = 'Downloading model (~900MB, may take a while)...';
+                } else if (text.toLowerCase().includes('loading model')) {
+                  text = 'Loading model into memory...';
+                }
+                setProgress({
+                  text,
+                  progress: report.progress,
+                });
+              },
+            });
+
+            engineRef.current = engine;
+            setStatus('ready');
+            setProgress({ text: 'Model loaded', progress: 1 });
+          } catch (err) {
+            setStatus('error');
+            setError(err instanceof Error ? err.message : 'Failed to load model');
+          }
+        }
       } catch {
         setSupportsWebGPU(false);
       }
     };
 
-    checkWebGPU();
+    checkWebGPUAndInit();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const init = useCallback(async () => {

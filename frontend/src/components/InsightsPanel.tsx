@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLLM, PortfolioData } from '@/hooks/useLLM';
 import { PortfolioStats } from '@/lib/api';
 
@@ -32,34 +32,12 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
     }));
   }, [portfolios]);
 
-  // Track if we should auto-generate after model loads
-  const pendingGenerateRef = useRef(false);
-
   const handleGenerate = () => {
     if (portfolioData.length > 0) {
       reset();
       generate(portfolioData);
     }
   };
-
-  // Single-click handler: load model if needed, then generate
-  const handleAnalyze = () => {
-    if (status === 'idle') {
-      pendingGenerateRef.current = true;
-      init();
-    } else if (status === 'ready') {
-      handleGenerate();
-    }
-  };
-
-  // Auto-generate when model becomes ready and we have a pending request
-  useEffect(() => {
-    if (status === 'ready' && pendingGenerateRef.current && portfolioData.length > 0) {
-      pendingGenerateRef.current = false;
-      reset();
-      generate(portfolioData);
-    }
-  }, [status, portfolioData, reset, generate]);
 
   // Generate display text for portfolios being analyzed
   const portfolioNames = useMemo(() => {
@@ -95,15 +73,37 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
     );
   }
 
-  // No portfolios loaded
+  // No portfolios loaded - but still show loading progress if model is loading
   if (portfolios.length === 0) {
     return (
       <div className="insights-panel">
         <div className="insights-header">
           <h3>AI Analysis</h3>
+          {status === 'ready' && <span className="insights-badge">Local LLM</span>}
         </div>
         <div className="insights-content">
-          <p className="insights-empty">Add portfolios to generate AI analysis</p>
+          {status === 'loading' ? (
+            <div className="insights-loading">
+              <div className="insights-progress-bar">
+                <div
+                  className="insights-progress-fill"
+                  style={{ width: `${progress.progress * 100}%` }}
+                />
+              </div>
+              <p className="insights-progress-text">{progress.text}</p>
+            </div>
+          ) : status === 'ready' ? (
+            <p className="insights-empty">Add portfolios to generate AI analysis</p>
+          ) : status === 'error' ? (
+            <div className="insights-error">
+              <p>{error || 'Failed to load model'}</p>
+              <button onClick={init} className="insights-btn insights-btn-secondary">
+                Retry
+              </button>
+            </div>
+          ) : (
+            <p className="insights-empty">Add portfolios to generate AI analysis</p>
+          )}
         </div>
       </div>
     );
@@ -132,16 +132,13 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
       </div>
 
       <div className="insights-content">
-        {/* Idle or Ready state without output - show single generate button */}
-        {(status === 'idle' || (status === 'ready' && !output)) && (
+        {/* Ready state without output - show generate button */}
+        {status === 'ready' && !output && (
           <div className="insights-idle">
             <p className="insights-description">
-              {status === 'idle'
-                ? 'Run AI analysis locally in your browser. The model (~900MB) will be downloaded once and cached.'
-                : `${isComparison ? 'Compare' : 'Analyze'}: ${portfolioNames}`
-              }
+              {isComparison ? 'Compare' : 'Analyze'}: {portfolioNames}
             </p>
-            <button onClick={handleAnalyze} className="insights-btn insights-btn-primary">
+            <button onClick={handleGenerate} className="insights-btn insights-btn-primary">
               {isComparison ? 'Compare Portfolios' : 'Generate Analysis'}
             </button>
           </div>
