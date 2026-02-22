@@ -178,6 +178,9 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
         {/* Output with regenerate button */}
         {status === 'ready' && output && (
           <div className="insights-result">
+            <p className="insights-target">
+              {isComparison ? 'Comparing' : 'Analyzing'}: <strong>{portfolioNames}</strong>
+            </p>
             <div className="insights-summary">
               <p>{output}</p>
             </div>
