@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 
 export type LLMStatus = 'idle' | 'loading' | 'ready' | 'generating' | 'error';
 
@@ -16,49 +16,45 @@ export interface PortfolioData {
   volatility: number;
   sharpe_ratio: number;
   max_drawdown: number;
-  holdings: Array<{ symbol: string; weight: number }>;
 }
 
-const MODEL_ID = "SmolLM2-360M-Instruct-q4f16_1-MLC";
+// Larger model for better accuracy
+const MODEL_ID = "Qwen2.5-1.5B-Instruct-q4f16_1-MLC";
 
-const SYSTEM_PROMPT = `You are a portfolio analysis assistant. Given portfolio metrics, provide a brief, factual summary. Structure your response as:
+// System prompt for comparing multiple portfolios
+const COMPARISON_SYSTEM_PROMPT = `You are a concise financial analyst. When given portfolio data, write a brief comparative analysis in 3-4 sentences. Focus on: which performed best, risk-adjusted returns (Sharpe ratio), and key trade-offs. Use the exact numbers provided. Do not give investment advice.`;
 
-**Summary**: 1-2 sentence overview of performance
+// System prompt for single portfolio analysis
+const SINGLE_SYSTEM_PROMPT = `You are a concise financial analyst. When given portfolio data, write a brief analysis in 2-3 sentences covering performance, risk characteristics, and any notable observations. Use the exact numbers provided. Do not give investment advice.`;
 
-**Strengths**:
-- Point 1
-- Point 2
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
 
-**Considerations**:
-- Point 1
-- Point 2
+function buildComparisonPrompt(portfolios: PortfolioData[]): string {
+  // Build clear data table
+  const dataLines = portfolios.map(p =>
+    `- ${p.name}: Total Return ${formatPercent(p.total_return)}, Annualized ${formatPercent(p.annualized_return)}, Volatility ${formatPercent(p.volatility)}, Sharpe ${p.sharpe_ratio.toFixed(2)}, Max Drawdown ${formatPercent(p.max_drawdown)}`
+  ).join('\n');
 
-Rules:
-- Be concise (under 200 words)
-- Base all statements on the provided metrics
-- Do not provide investment advice
-- Use plain language`;
+  return `Compare these ${portfolios.length} investment portfolios:
 
-function buildPrompt(data: PortfolioData): string {
-  const holdingsList = data.holdings
-    .map((h) => `- ${h.symbol}: ${(h.weight * 100).toFixed(0)}%`)
-    .join("\n");
+${dataLines}
 
+Write a 3-4 sentence comparison. Mention which had the highest return, best Sharpe ratio, and the key trade-offs between them.`;
+}
+
+function buildSinglePrompt(data: PortfolioData): string {
   return `Analyze this portfolio:
 
-Portfolio: ${data.name}
-
-Performance Metrics:
-- Total Return: ${(data.total_return * 100).toFixed(1)}%
-- Annualized Return: ${(data.annualized_return * 100).toFixed(1)}%
-- Volatility: ${(data.volatility * 100).toFixed(1)}%
+${data.name}:
+- Total Return: ${formatPercent(data.total_return)}
+- Annualized Return: ${formatPercent(data.annualized_return)}
+- Volatility: ${formatPercent(data.volatility)}
 - Sharpe Ratio: ${data.sharpe_ratio.toFixed(2)}
-- Max Drawdown: ${(data.max_drawdown * 100).toFixed(1)}%
+- Max Drawdown: ${formatPercent(data.max_drawdown)}
 
-Holdings:
-${holdingsList}
-
-Provide a brief analysis.`;
+Write a 2-3 sentence analysis of this portfolio's performance and risk characteristics.`;
 }
 
 // Dynamic import type for web-llm
@@ -103,7 +99,7 @@ export function useLLM() {
 
     setStatus('loading');
     setError(null);
-    setProgress({ text: 'Initializing...', progress: 0 });
+    setProgress({ text: 'Loading AI model (~900MB, may take a while)...', progress: 0 });
 
     try {
       // Dynamic import to avoid SSR issues
@@ -111,8 +107,15 @@ export function useLLM() {
 
       const engine = await CreateMLCEngine(MODEL_ID, {
         initProgressCallback: (report) => {
+          // Transform technical messages into user-friendly ones
+          let text = report.text;
+          if (text.toLowerCase().includes('start to fetch') || text.toLowerCase().includes('fetching param')) {
+            text = 'Downloading model (~900MB, may take a while)...';
+          } else if (text.toLowerCase().includes('loading model')) {
+            text = 'Loading model into memory...';
+          }
           setProgress({
-            text: report.text,
+            text,
             progress: report.progress,
           });
         },
@@ -127,23 +130,34 @@ export function useLLM() {
     }
   }, [status]);
 
-  const generate = useCallback(async (data: PortfolioData) => {
-    if (!engineRef.current || status !== 'ready') return;
+  const generate = useCallback(async (portfolios: PortfolioData[]) => {
+    if (!engineRef.current || status !== 'ready' || portfolios.length === 0) return;
 
     setOutput('');
     setError(null);
     setStatus('generating');
 
     try {
-      const prompt = buildPrompt(data);
+      // Use comparison prompt for multiple portfolios, single prompt for one
+      const isComparison = portfolios.length > 1;
+      const systemPrompt = isComparison ? COMPARISON_SYSTEM_PROMPT : SINGLE_SYSTEM_PROMPT;
+      const userPrompt = isComparison
+        ? buildComparisonPrompt(portfolios)
+        : buildSinglePrompt(portfolios[0]);
+
+      // Debug: log the prompt being sent
+      console.log('=== LLM Prompt Debug ===');
+      console.log('Portfolios received:', portfolios);
+      console.log('User prompt:', userPrompt);
+      console.log('========================');
 
       const stream = await engineRef.current.chat.completions.create({
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: prompt },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
         ],
         temperature: 0.3,
-        max_tokens: 350,
+        max_tokens: 400,
         stream: true,
       });
 
