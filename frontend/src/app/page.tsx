@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
 import PortfolioBuilder from '@/components/PortfolioBuilder';
 import PortfolioPopover from '@/components/PortfolioPopover';
 import CurrencySelector from '@/components/CurrencySelector';
+import InsightsPanel from '@/components/InsightsPanel';
 import { ChartSkeleton, TableSkeleton } from '@/components/LoadingSkeletons';
 import { Asset, PortfolioStats, PerformanceData, CurrencyInfo, analyzePortfolio, comparePortfolios, fetchCurrencies } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
@@ -74,6 +75,7 @@ export default function Home() {
 
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [selectedInsightsIndex, setSelectedInsightsIndex] = useState<number>(0);
   const hasLoadedInitial = useRef(false);
   const resultsRef = useRef<PortfolioResult[]>([]);
   const analyzeControllerRef = useRef<AbortController | null>(null);
@@ -232,6 +234,13 @@ export default function Home() {
   })), [results]);
 
   const statsData = useMemo(() => results.map((r) => r.stats), [results]);
+
+  // Selected portfolio for AI insights
+  const selectedInsightsPortfolio = useMemo(() => {
+    if (results.length === 0) return null;
+    const index = Math.min(selectedInsightsIndex, results.length - 1);
+    return results[index] || null;
+  }, [results, selectedInsightsIndex]);
 
   return (
     <div className="container">
@@ -449,6 +458,29 @@ export default function Home() {
             />
           </Suspense>
         </div>
+      </div>
+
+      {/* AI Insights Panel */}
+      <div className="insights-row">
+        {results.length > 1 && (
+          <div className="insights-selector">
+            <label>Analyze portfolio:</label>
+            <select
+              value={selectedInsightsIndex}
+              onChange={(e) => setSelectedInsightsIndex(Number(e.target.value))}
+            >
+              {results.map((r, i) => (
+                <option key={r.name} value={i}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        <InsightsPanel
+          stats={selectedInsightsPortfolio?.stats || null}
+          holdings={selectedInsightsPortfolio?.assets || []}
+        />
       </div>
 
       {/* Modal for Custom/Edit Portfolio */}
