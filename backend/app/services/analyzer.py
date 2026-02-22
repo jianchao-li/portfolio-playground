@@ -2,8 +2,8 @@ import logging
 import threading
 from datetime import date, timedelta
 
-import numpy as np
 import pandas as pd
+import quantstats as qs
 import yfinance as yf
 from cachetools import TTLCache
 
@@ -15,15 +15,15 @@ _prices_lock = threading.Lock()
 _rf_cache = TTLCache(maxsize=16, ttl=300)
 _rf_lock = threading.Lock()
 
+DEFAULT_RISK_FREE_RATE = 0.05  # 5% annual fallback
+
 
 class PortfolioAnalyzer:
-    TRADING_DAYS_PER_YEAR = 252
-
     def __init__(self):
         self.currency_service = CurrencyService()
 
-    def fetch_risk_free_rates(self, start_date: date, end_date: date) -> pd.Series | None:
-        """Fetch historical daily 3-month T-bill rates for date range."""
+    def fetch_risk_free_rate(self, start_date: date, end_date: date) -> float:
+        """Fetch average annual risk-free rate (3-month T-bill) for date range."""
         key = (start_date, end_date)
         with _rf_lock:
             if key in _rf_cache:
@@ -43,21 +43,20 @@ class PortfolioAnalyzer:
                     rates = data['Close']['^IRX']
                 else:
                     rates = data['Close']
-                # Convert percentage to decimal, then to daily rate
-                rates = (rates / 100) / self.TRADING_DAYS_PER_YEAR
                 rates = rates.ffill().dropna()
                 rates = rates[rates.index >= pd.Timestamp(start_date)]
                 rates = rates[rates.index <= pd.Timestamp(end_date)]
+                # Convert percentage to decimal (e.g., 4.5% -> 0.045)
+                rf_annual = float(rates.mean()) / 100
                 with _rf_lock:
-                    _rf_cache[key] = rates
-                return rates
+                    _rf_cache[key] = rf_annual
+                return rf_annual
         except Exception as e:
             logging.warning("Failed to fetch risk-free rates: %s", e)
 
-        # Fallback: return None to use constant rate
         with _rf_lock:
-            _rf_cache[key] = None
-        return None
+            _rf_cache[key] = DEFAULT_RISK_FREE_RATE
+        return DEFAULT_RISK_FREE_RATE
 
     def fetch_prices(self, symbols: list[str], start_date: date, end_date: date,
                      batch: bool = False) -> pd.DataFrame:
@@ -121,54 +120,22 @@ class PortfolioAnalyzer:
         return portfolio_value * 100  # Start at 100
 
     def calculate_stats(self, portfolio_values: pd.Series, name: str,
-                        daily_rf_rates: pd.Series | None = None) -> PortfolioStats:
-        """Calculate portfolio statistics."""
-        # Daily returns
+                        rf_annual: float = DEFAULT_RISK_FREE_RATE) -> PortfolioStats:
+        """Calculate portfolio statistics using QuantStats."""
         daily_returns = portfolio_values.pct_change().dropna()
-
-        # Total return
-        total_return = (portfolio_values.iloc[-1] / portfolio_values.iloc[0]) - 1
-
-        # Annualized return
-        num_days = len(portfolio_values)
-        annualized_return = (1 + total_return) ** (self.TRADING_DAYS_PER_YEAR / num_days) - 1
-
-        # Volatility (annualized)
-        volatility = daily_returns.std(ddof=1) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
-
-        # Sharpe ratio with historical daily risk-free rates
-        if daily_rf_rates is not None:
-            # Align risk-free rates with daily returns index
-            aligned_rf = daily_rf_rates.reindex(daily_returns.index, method='ffill').bfill()
-            excess_returns = daily_returns - aligned_rf
-        else:
-            # Fallback to constant 5% annual rate
-            daily_rf = 0.05 / self.TRADING_DAYS_PER_YEAR
-            excess_returns = daily_returns - daily_rf
-
-        excess_std = excess_returns.std(ddof=1)
-        if excess_std == 0:
-            sharpe_ratio = 0.0
-        else:
-            sharpe_ratio = (excess_returns.mean() / excess_std) * np.sqrt(self.TRADING_DAYS_PER_YEAR)
-
-        # Max drawdown
-        rolling_max = portfolio_values.cummax()
-        drawdown = (portfolio_values - rolling_max) / rolling_max
-        max_drawdown = drawdown.min()
 
         return PortfolioStats(
             name=name,
-            total_return=round(total_return, 4),
-            annualized_return=round(annualized_return, 4),
-            volatility=round(volatility, 4),
-            sharpe_ratio=round(sharpe_ratio, 4),
-            max_drawdown=round(max_drawdown, 4)
+            total_return=round(float(qs.stats.comp(daily_returns)), 4),
+            annualized_return=round(float(qs.stats.cagr(daily_returns)), 4),
+            volatility=round(float(qs.stats.volatility(daily_returns, annualize=True)), 4),
+            sharpe_ratio=round(float(qs.stats.sharpe(daily_returns, rf=rf_annual)), 4),
+            max_drawdown=round(float(qs.stats.max_drawdown(daily_returns)), 4)
         )
 
     def analyze(self, portfolio: Portfolio, start_date: date, end_date: date,
                 currency: str = "USD",
-                rf_rates=None, exchange_rates=None,
+                rf_rate: float | None = None, exchange_rates=None,
                 all_prices=None) -> tuple[PortfolioStats, PerformanceData]:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
@@ -198,11 +165,11 @@ class PortfolioAnalyzer:
             aligned_rates = exchange_rates.reindex(portfolio_values.index, method="ffill").bfill()
             portfolio_values = portfolio_values * aligned_rates
 
-        # Fetch historical risk-free rates for Sharpe ratio calculation (if not provided)
-        if rf_rates is None:
-            rf_rates = self.fetch_risk_free_rates(start_date, end_date)
+        # Fetch risk-free rate for Sharpe ratio calculation (if not provided)
+        if rf_rate is None:
+            rf_rate = self.fetch_risk_free_rate(start_date, end_date)
 
-        stats = self.calculate_stats(portfolio_values, portfolio.name, rf_rates)
+        stats = self.calculate_stats(portfolio_values, portfolio.name, rf_rate)
 
         performance = PerformanceData(
             dates=[d.strftime('%Y-%m-%d') for d in portfolio_values.index],

@@ -58,7 +58,7 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
 
     try:
         analyzer = PortfolioAnalyzer()
-        rf_rates = analyzer.fetch_risk_free_rates(body.start_date, body.end_date)
+        rf_rate = analyzer.fetch_risk_free_rate(body.start_date, body.end_date)
 
         exchange_rates = None
         if body.currency != "USD":
@@ -82,7 +82,7 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
                 start_date=body.start_date,
                 end_date=body.end_date,
                 currency=body.currency,
-                rf_rates=rf_rates,
+                rf_rate=rf_rate,
                 exchange_rates=exchange_rates,
                 all_prices=all_prices
             )
