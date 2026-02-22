@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useLLM, PortfolioData } from '@/hooks/useLLM';
 import { PortfolioStats } from '@/lib/api';
 
@@ -32,12 +32,34 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
     }));
   }, [portfolios]);
 
+  // Track if we should auto-generate after model loads
+  const pendingGenerateRef = useRef(false);
+
   const handleGenerate = () => {
     if (portfolioData.length > 0) {
       reset();
       generate(portfolioData);
     }
   };
+
+  // Single-click handler: load model if needed, then generate
+  const handleAnalyze = () => {
+    if (status === 'idle') {
+      pendingGenerateRef.current = true;
+      init();
+    } else if (status === 'ready') {
+      handleGenerate();
+    }
+  };
+
+  // Auto-generate when model becomes ready and we have a pending request
+  useEffect(() => {
+    if (status === 'ready' && pendingGenerateRef.current && portfolioData.length > 0) {
+      pendingGenerateRef.current = false;
+      reset();
+      generate(portfolioData);
+    }
+  }, [status, portfolioData, reset, generate]);
 
   // Generate display text for portfolios being analyzed
   const portfolioNames = useMemo(() => {
@@ -110,14 +132,17 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
       </div>
 
       <div className="insights-content">
-        {/* Idle state - show load button */}
-        {status === 'idle' && (
+        {/* Idle or Ready state without output - show single generate button */}
+        {(status === 'idle' || (status === 'ready' && !output)) && (
           <div className="insights-idle">
             <p className="insights-description">
-              Run AI analysis locally in your browser using Qwen2.5-1.5B. The model (~900MB) will be downloaded once and cached.
+              {status === 'idle'
+                ? 'Run AI analysis locally in your browser. The model (~900MB) will be downloaded once and cached.'
+                : `${isComparison ? 'Compare' : 'Analyze'}: ${portfolioNames}`
+              }
             </p>
-            <button onClick={init} className="insights-btn insights-btn-primary">
-              Load AI Model
+            <button onClick={handleAnalyze} className="insights-btn insights-btn-primary">
+              {isComparison ? 'Compare Portfolios' : 'Generate Analysis'}
             </button>
           </div>
         )}
@@ -132,18 +157,6 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
               />
             </div>
             <p className="insights-progress-text">{progress.text}</p>
-          </div>
-        )}
-
-        {/* Ready state - show generate button */}
-        {status === 'ready' && !output && (
-          <div className="insights-ready">
-            <p className="insights-target">
-              {isComparison ? 'Comparing' : 'Analyzing'}: <strong>{portfolioNames}</strong>
-            </p>
-            <button onClick={handleGenerate} className="insights-btn insights-btn-primary">
-              {isComparison ? 'Compare Portfolios' : 'Generate Analysis'}
-            </button>
           </div>
         )}
 
