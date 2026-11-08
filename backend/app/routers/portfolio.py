@@ -103,7 +103,7 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
 @limiter.limit("30/minute")
 async def search_symbols(request: Request, q: str):
     """Search for ticker symbols using Yahoo Finance search API."""
-    if not q or len(q) < 1:
+    if not q:
         return []
 
     try:
@@ -124,17 +124,15 @@ async def search_symbols(request: Request, q: str):
             response.raise_for_status()
             data = response.json()
 
-        quotes = data.get("quotes", [])
-        results = []
-        for quote in quotes[:10]:
-            results.append({
+        return [
+            {
                 "symbol": quote.get("symbol"),
                 "name": quote.get("shortname") or quote.get("longname"),
                 "type": quote.get("quoteType"),
                 "exchange": quote.get("exchange"),
-            })
-
-        return results
+            }
+            for quote in data.get("quotes", [])[:10]
+        ]
     except httpx.TimeoutException:
         logging.error(f"Symbol search timeout for query: {q}")
         raise HTTPException(status_code=504, detail="Symbol search timed out")

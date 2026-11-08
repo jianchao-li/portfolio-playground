@@ -14,37 +14,37 @@ const PerformanceChart = lazy(() => import('@/components/PerformanceChart'));
 const StatsTable = lazy(() => import('@/components/StatsTable'));
 
 // Preset portfolios for quick comparison
-const PRESET_PORTFOLIOS = [
+const PRESET_PORTFOLIOS: { name: string; assets: Asset[]; default?: boolean }[] = [
   {
     name: 'S&P 500',
-    assets: [{ symbol: 'VOO', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'VOO', weight: 1.0 }],
     default: true,
   },
   {
     name: 'NASDAQ 100',
-    assets: [{ symbol: 'QQQ', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'QQQ', weight: 1.0 }],
   },
   {
     name: 'Developed Markets ex-US',
-    assets: [{ symbol: 'VEA', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'VEA', weight: 1.0 }],
     default: true,
   },
   {
     name: 'Emerging Markets',
-    assets: [{ symbol: 'VWO', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'VWO', weight: 1.0 }],
     default: true,
   },
   {
     name: 'Gold',
-    assets: [{ symbol: 'GLD', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'GLD', weight: 1.0 }],
   },
   {
     name: 'Bitcoin',
-    assets: [{ symbol: 'IBIT', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'IBIT', weight: 1.0 }],
   },
   {
     name: 'Volatility',
-    assets: [{ symbol: 'VIXY', weight: 1.0 }] as Asset[],
+    assets: [{ symbol: 'VIXY', weight: 1.0 }],
   },
 ];
 
@@ -53,6 +53,32 @@ interface PortfolioResult {
   assets: Asset[];
   stats: PortfolioStats;
   performance: PerformanceData;
+}
+
+type PortfolioInput = Pick<PortfolioResult, 'name' | 'assets'>;
+
+const chipStyle = (color: string) => ({
+  borderColor: color,
+  background: `linear-gradient(135deg, ${color}15, ${color}08)`,
+  color,
+  boxShadow: `0 2px 8px ${color}25`,
+});
+
+async function fetchAll(
+  portfolios: PortfolioInput[],
+  startDate: string,
+  endDate: string,
+  currency: string,
+  signal?: AbortSignal
+): Promise<PortfolioResult[]> {
+  const inputs = portfolios.map(({ name, assets }) => ({ name, assets }));
+  const response = await comparePortfolios(inputs, startDate, endDate, currency, signal);
+  return response.portfolios.map((r, i) => ({
+    name: inputs[i].name,
+    assets: inputs[i].assets,
+    stats: r.stats,
+    performance: r.performance,
+  }));
 }
 
 export default function Home() {
@@ -105,6 +131,11 @@ export default function Home() {
     setShowModal(true);
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingPortfolio(null);
+  };
+
   const handleAnalyze = async (name: string, assets: Asset[]) => {
     analyzeControllerRef.current?.abort();
     const controller = new AbortController();
@@ -127,8 +158,7 @@ export default function Home() {
         const filtered = prev.filter((r) => r.name !== name);
         return [...filtered, { name, assets, ...response }];
       });
-      setShowModal(false);
-      setEditingPortfolio(null);
+      closeModal();
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -139,7 +169,16 @@ export default function Home() {
     }
   };
 
-  const addPreset = async (preset: { name: string; assets: Asset[] }) => {
+  const renderPopover = (r: PortfolioResult) => (
+    <PortfolioPopover
+      name={r.name}
+      assets={r.assets}
+      onEdit={() => handleEditClick(r)}
+      onRemove={() => removePortfolio(r.name)}
+    />
+  );
+
+  const addPreset = async (preset: PortfolioInput) => {
     if (results.some((r) => r.name === preset.name)) {
       return;
     }
@@ -164,18 +203,9 @@ export default function Home() {
         setLoading(true);
         setError(null);
         try {
-          const defaultPresets = PRESET_PORTFOLIOS.filter((p) => p.default);
-          const portfolios = defaultPresets.map((p) => ({
-            name: p.name,
-            assets: p.assets,
-          }));
-          const response = await comparePortfolios(portfolios, startDate, endDate, currency);
-          const allResults = response.portfolios.map((r, i) => ({
-            name: defaultPresets[i].name,
-            assets: defaultPresets[i].assets,
-            stats: r.stats,
-            performance: r.performance,
-          }));
+          const allResults = await fetchAll(
+            PRESET_PORTFOLIOS.filter((p) => p.default), startDate, endDate, currency
+          );
           setResults(allResults);
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Failed to load portfolios');
@@ -201,17 +231,9 @@ export default function Home() {
       setError(null);
 
       try {
-        const portfolios = currentResults.map((r) => ({
-          name: r.name,
-          assets: r.assets,
-        }));
-        const response = await comparePortfolios(portfolios, startDate, endDate, currency, controller.signal);
-        const refreshedResults = response.portfolios.map((r, i) => ({
-          name: currentResults[i].name,
-          assets: currentResults[i].assets,
-          stats: r.stats,
-          performance: r.performance,
-        }));
+        const refreshedResults = await fetchAll(
+          currentResults, startDate, endDate, currency, controller.signal
+        );
         setResults(refreshedResults);
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -315,12 +337,7 @@ export default function Home() {
                   >
                     <span
                       className="portfolio-chip-unified active"
-                      style={{
-                        borderColor: color,
-                        background: `linear-gradient(135deg, ${color}15, ${color}08)`,
-                        color: color,
-                        boxShadow: `0 2px 8px ${color}25`,
-                      }}
+                      style={chipStyle(color)}
                     >
                       <span
                         className="chip-name"
@@ -337,15 +354,7 @@ export default function Home() {
                         ×
                       </button>
                     </span>
-                    {openPopover === r.name && (
-                      <PortfolioPopover
-                        name={r.name}
-                        assets={r.assets}
-                        onEdit={() => handleEditClick(r)}
-                        onRemove={() => removePortfolio(r.name)}
-                        onClose={() => setOpenPopover(null)}
-                      />
-                    )}
+                    {openPopover === r.name && renderPopover(r)}
                   </div>
                 );
               })}
@@ -356,7 +365,6 @@ export default function Home() {
           {PRESET_PORTFOLIOS.map((preset) => {
             const resultIndex = results.findIndex((r) => r.name === preset.name);
             const isActive = resultIndex !== -1;
-            const color = isActive ? getPortfolioColor(resultIndex) : undefined;
 
             if (isActive) {
               const r = results[resultIndex];
@@ -371,24 +379,11 @@ export default function Home() {
                     onClick={() => removePortfolio(preset.name)}
                     disabled={loading}
                     className="portfolio-chip-unified active"
-                    style={{
-                      borderColor: color,
-                      background: `linear-gradient(135deg, ${color}15, ${color}08)`,
-                      color: color,
-                      boxShadow: `0 2px 8px ${color}25`,
-                    }}
+                    style={chipStyle(getPortfolioColor(resultIndex))}
                   >
                     ✓ {preset.name}
                   </button>
-                  {openPopover === r.name && (
-                    <PortfolioPopover
-                      name={r.name}
-                      assets={r.assets}
-                      onEdit={() => handleEditClick(r)}
-                      onRemove={() => removePortfolio(r.name)}
-                      onClose={() => setOpenPopover(null)}
-                    />
-                  )}
+                  {openPopover === r.name && renderPopover(r)}
                 </div>
               );
             }
@@ -411,7 +406,6 @@ export default function Home() {
                   <PortfolioPopover
                     name={preset.name}
                     assets={preset.assets}
-                    onClose={() => setOpenPopover(null)}
                   />
                 )}
               </div>
@@ -459,17 +453,11 @@ export default function Home() {
 
       {/* Modal for Custom/Edit Portfolio */}
       {(showModal || editingPortfolio) && (
-        <div className="modal-overlay" onClick={() => {
-          setShowModal(false);
-          setEditingPortfolio(null);
-        }}>
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingPortfolio ? 'Edit Portfolio' : 'Add Custom Portfolio'}</h2>
-              <button className="modal-close" aria-label="Close" onClick={() => {
-                setShowModal(false);
-                setEditingPortfolio(null);
-              }}>
+              <button className="modal-close" aria-label="Close" onClick={closeModal}>
                 ×
               </button>
             </div>

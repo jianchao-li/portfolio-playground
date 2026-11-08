@@ -13,6 +13,14 @@ const METRIC_DEFINITIONS: Record<string, string> = {
   'Max Drawdown': 'The largest peak-to-trough decline during the period. It shows the worst-case loss an investor could have experienced.',
 };
 
+const COLUMNS: { term: string; short?: string; tooltipClassName?: string }[] = [
+  { term: 'Total Return', short: 'Total Ret.' },
+  { term: 'Annualized Return', short: 'Ann. Return' },
+  { term: 'Volatility' },
+  { term: 'Sharpe Ratio', short: 'Sharpe' },
+  { term: 'Max Drawdown', short: 'Max DD', tooltipClassName: 'info-tooltip-right' },
+];
+
 interface InfoTooltipProps {
   term: string;
   isOpen: boolean;
@@ -58,26 +66,22 @@ export default function StatsTable({ stats, onHighlight }: StatsTableProps) {
         <thead>
           <tr>
             <th>Portfolio</th>
-            <th>
-              <span className="header-full">Total Return</span><span className="header-short">Total Ret.</span>
-              <InfoTooltip term="Total Return" isOpen={openTooltip === 'Total Return'} onOpen={() => setOpenTooltip('Total Return')} onClose={() => setOpenTooltip(null)} />
-            </th>
-            <th>
-              <span className="header-full">Annualized Return</span><span className="header-short">Ann. Return</span>
-              <InfoTooltip term="Annualized Return" isOpen={openTooltip === 'Annualized Return'} onOpen={() => setOpenTooltip('Annualized Return')} onClose={() => setOpenTooltip(null)} />
-            </th>
-            <th>
-              Volatility
-              <InfoTooltip term="Volatility" isOpen={openTooltip === 'Volatility'} onOpen={() => setOpenTooltip('Volatility')} onClose={() => setOpenTooltip(null)} />
-            </th>
-            <th>
-              <span className="header-full">Sharpe Ratio</span><span className="header-short">Sharpe</span>
-              <InfoTooltip term="Sharpe Ratio" isOpen={openTooltip === 'Sharpe Ratio'} onOpen={() => setOpenTooltip('Sharpe Ratio')} onClose={() => setOpenTooltip(null)} />
-            </th>
-            <th>
-              <span className="header-full">Max Drawdown</span><span className="header-short">Max DD</span>
-              <InfoTooltip term="Max Drawdown" isOpen={openTooltip === 'Max Drawdown'} onOpen={() => setOpenTooltip('Max Drawdown')} onClose={() => setOpenTooltip(null)} tooltipClassName="info-tooltip-right" />
-            </th>
+            {COLUMNS.map(({ term, short, tooltipClassName }) => (
+              <th key={term}>
+                {short ? (
+                  <>
+                    <span className="header-full">{term}</span><span className="header-short">{short}</span>
+                  </>
+                ) : term}
+                <InfoTooltip
+                  term={term}
+                  isOpen={openTooltip === term}
+                  onOpen={() => setOpenTooltip(term)}
+                  onClose={() => setOpenTooltip(null)}
+                  tooltipClassName={tooltipClassName}
+                />
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>

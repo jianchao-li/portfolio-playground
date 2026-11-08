@@ -1,13 +1,13 @@
-import { useEffect, useRef as useReactRef, RefObject } from 'react';
+import { useEffect, useRef, RefObject } from 'react';
 
 export function useClickOutside(
   refs: RefObject<HTMLElement | null>[],
   callback: () => void
 ) {
-  const refsRef = useReactRef(refs);
+  const refsRef = useRef(refs);
   refsRef.current = refs;
 
-  const callbackRef = useReactRef(callback);
+  const callbackRef = useRef(callback);
   callbackRef.current = callback;
 
   useEffect(() => {

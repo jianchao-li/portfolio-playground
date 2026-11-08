@@ -1,8 +1,33 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { useLLM, PortfolioData } from '@/hooks/useLLM';
+import { useMemo, useState } from 'react';
+import { useLLM, LLMProgress } from '@/hooks/useLLM';
 import { PortfolioStats } from '@/lib/api';
+
+function ProgressBar({ progress }: { progress: LLMProgress }) {
+  return (
+    <div className="insights-loading">
+      <div className="insights-progress-bar">
+        <div
+          className="insights-progress-fill"
+          style={{ width: `${progress.progress * 100}%` }}
+        />
+      </div>
+      <p className="insights-progress-text">{progress.text}</p>
+    </div>
+  );
+}
+
+function ErrorBox({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="insights-error">
+      <p>{message}</p>
+      <button onClick={onRetry} className="insights-btn insights-btn-secondary">
+        Retry
+      </button>
+    </div>
+  );
+}
 
 interface InsightsPanelProps {
   portfolios: PortfolioStats[];
@@ -20,22 +45,10 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
     reset,
   } = useLLM();
 
-  // Convert PortfolioStats[] to PortfolioData[]
-  const portfolioData: PortfolioData[] = useMemo(() => {
-    return portfolios.map(p => ({
-      name: p.name,
-      total_return: p.total_return,
-      annualized_return: p.annualized_return,
-      volatility: p.volatility,
-      sharpe_ratio: p.sharpe_ratio,
-      max_drawdown: p.max_drawdown,
-    }));
-  }, [portfolios]);
-
   const handleGenerate = () => {
-    if (portfolioData.length > 0) {
+    if (portfolios.length > 0) {
       reset();
-      generate(portfolioData);
+      generate(portfolios);
     }
   };
 
@@ -83,24 +96,9 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
         </div>
         <div className="insights-content">
           {status === 'loading' ? (
-            <div className="insights-loading">
-              <div className="insights-progress-bar">
-                <div
-                  className="insights-progress-fill"
-                  style={{ width: `${progress.progress * 100}%` }}
-                />
-              </div>
-              <p className="insights-progress-text">{progress.text}</p>
-            </div>
-          ) : status === 'ready' ? (
-            <p className="insights-empty">Add portfolios to generate AI analysis</p>
+            <ProgressBar progress={progress} />
           ) : status === 'error' ? (
-            <div className="insights-error">
-              <p>{error || 'Failed to load model'}</p>
-              <button onClick={init} className="insights-btn insights-btn-secondary">
-                Retry
-              </button>
-            </div>
+            <ErrorBox message={error || 'Failed to load model'} onRetry={init} />
           ) : (
             <p className="insights-empty">Add portfolios to generate AI analysis</p>
           )}
@@ -145,17 +143,7 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
         )}
 
         {/* Loading state - show progress */}
-        {status === 'loading' && (
-          <div className="insights-loading">
-            <div className="insights-progress-bar">
-              <div
-                className="insights-progress-fill"
-                style={{ width: `${progress.progress * 100}%` }}
-              />
-            </div>
-            <p className="insights-progress-text">{progress.text}</p>
-          </div>
-        )}
+        {status === 'loading' && <ProgressBar progress={progress} />}
 
         {/* Generating state - show spinner and streaming output */}
         {status === 'generating' && (
@@ -189,12 +177,7 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
 
         {/* Error state */}
         {status === 'error' && (
-          <div className="insights-error">
-            <p>{error || 'An error occurred'}</p>
-            <button onClick={init} className="insights-btn insights-btn-secondary">
-              Retry
-            </button>
-          </div>
+          <ErrorBox message={error || 'An error occurred'} onRetry={init} />
         )}
       </div>
     </div>

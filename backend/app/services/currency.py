@@ -1,8 +1,10 @@
-import yfinance as yf
-import pandas as pd
-from datetime import date, timedelta
 import threading
+from datetime import date
+
+import pandas as pd
 from cachetools import TTLCache
+
+from app.services.market_data import cached, clip_to_range, download, extract_close_prices
 
 _fx_cache = TTLCache(maxsize=16, ttl=300)
 _fx_lock = threading.Lock()
@@ -55,74 +57,39 @@ SUPPORTED_CURRENCIES = {
 INVERTED_QUOTES = {"EUR", "GBP", "AUD", "NZD"}
 
 
-def extract_close_prices(data: pd.DataFrame, error_context: str = "symbols") -> pd.DataFrame | pd.Series:
-    """Extract close/adj-close prices from yfinance download data, handling MultiIndex columns."""
-    if isinstance(data.columns, pd.MultiIndex):
-        if 'Adj Close' in data.columns.get_level_values(0):
-            return data['Adj Close']
-        return data['Close']
-    if 'Adj Close' in data.columns:
-        return data['Adj Close']
-    if 'Close' in data.columns:
-        return data['Close']
-    raise ValueError(f"No price data found for {error_context}")
-
-
 class CurrencyService:
     """Service for fetching and applying currency exchange rates."""
 
     def fetch_exchange_rates(
         self, currency: str, start_date: date, end_date: date
-    ) -> pd.Series | None:
+    ) -> pd.Series:
         """
         Fetch exchange rates for converting USD to target currency.
         Returns a Series indexed by date with conversion multipliers.
         """
-        key = (currency, start_date, end_date)
-        with _fx_lock:
-            if key in _fx_cache:
-                return _fx_cache[key]
-
         currency_info = SUPPORTED_CURRENCIES.get(currency)
         if not currency_info or not currency_info["ticker"]:
             raise ValueError(f"Unsupported currency: {currency}")
 
-        # Add buffer for weekend/holiday adjustments
-        adjusted_start = start_date - timedelta(days=5)
+        def compute() -> pd.Series:
+            data = download(currency_info["ticker"], start_date, end_date)
+            if data.empty:
+                raise ValueError(f"No exchange rate data available for {currency}")
 
-        data = yf.download(
-            tickers=currency_info["ticker"],
-            start=adjusted_start.isoformat(),
-            end=end_date.isoformat(),
-            progress=False,
-        )
+            rates = extract_close_prices(data, error_context=currency)
+            # Flatten to Series if single-ticker DataFrame
+            if isinstance(rates, pd.DataFrame):
+                rates = rates.iloc[:, 0]
 
-        if data.empty:
-            raise ValueError(f"No exchange rate data available for {currency}")
+            rates = clip_to_range(rates.ffill().dropna(), start_date, end_date)
+            if rates.empty:
+                raise ValueError(f"No exchange rate data available for {currency} in the specified date range")
 
-        # Extract close prices using shared helper
-        rates = extract_close_prices(data, error_context=currency)
-        # Flatten to Series if single-ticker DataFrame
-        if isinstance(rates, pd.DataFrame):
-            rates = rates.iloc[:, 0]
+            # For EUR/GBP/AUD/NZD: quote is XXX/USD, so we need to invert to get USD/XXX
+            # For JPY/CHF/CAD etc.: quote is already USD/XXX
+            return 1 / rates if currency in INVERTED_QUOTES else rates
 
-        # Forward fill missing data
-        rates = rates.ffill().dropna()
-        rates = rates[rates.index >= pd.Timestamp(start_date)]
-        rates = rates[rates.index <= pd.Timestamp(end_date)]
-
-        if rates.empty:
-            raise ValueError(f"No exchange rate data available for {currency} in the specified date range")
-
-        # Convert to proper multiplier
-        # For EUR/GBP/AUD/NZD: quote is XXX/USD, so we need to invert to get USD/XXX
-        # For JPY/CHF/CAD etc.: quote is already USD/XXX
-        if currency in INVERTED_QUOTES:
-            rates = 1 / rates
-
-        with _fx_lock:
-            _fx_cache[key] = rates
-        return rates
+        return cached(_fx_cache, _fx_lock, (currency, start_date, end_date), compute)
 
 
 def get_currency_list() -> list[dict]:

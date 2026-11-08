@@ -31,11 +31,12 @@ interface ChartInfoTooltipProps {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
+  currency: string;
   currencyName: string;
 }
 
-function ChartInfoTooltip({ isOpen, onOpen, onClose, currencyName }: ChartInfoTooltipProps) {
-  const isUSD = currencyName === 'US Dollar';
+function ChartInfoTooltip({ isOpen, onOpen, onClose, currency, currencyName }: ChartInfoTooltipProps) {
+  const isUSD = currency === 'USD';
   return (
     <span
       className="info-tooltip-wrapper"
@@ -81,7 +82,7 @@ export default function PerformanceChart({ data, currency = 'USD', currencies = 
 
   // Memoize chart data transformation - must be called before any early returns
   const chartData = useMemo(() => {
-    if (!data.length || !data[0]?.performance?.dates?.length) {
+    if (!data[0]?.performance?.dates?.length) {
       return [];
     }
 
@@ -129,25 +130,6 @@ export default function PerformanceChart({ data, currency = 'USD', currencies = 
 
   const ticks = tickIndices.map(i => chartData[i]?.date).filter(Boolean);
 
-  if (!data.length || !data[0]?.performance?.dates?.length) {
-    return (
-      <div className="chart-container">
-        <h3>
-          Portfolio Performance
-          <ChartInfoTooltip
-            isOpen={showInfoTooltip}
-            onOpen={() => setShowInfoTooltip(true)}
-            onClose={() => setShowInfoTooltip(false)}
-            currencyName={currencyName}
-          />
-        </h3>
-        <div className="chart-empty">
-          <p>Select portfolios to compare performance</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="chart-container">
       <h3>
@@ -156,46 +138,53 @@ export default function PerformanceChart({ data, currency = 'USD', currencies = 
           isOpen={showInfoTooltip}
           onOpen={() => setShowInfoTooltip(true)}
           onClose={() => setShowInfoTooltip(false)}
+          currency={currency}
           currencyName={currencyName}
         />
       </h3>
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#d1e3dd" />
-          <XAxis
-            dataKey="date"
-            tickFormatter={formatDateLabel}
-            ticks={ticks}
-            {...CHART_AXIS_STYLE}
-          />
-          <YAxis
-            domain={['auto', 'auto']}
-            {...CHART_AXIS_STYLE}
-          />
-          <Tooltip
-            contentStyle={CHART_TOOLTIP_STYLE}
-            itemStyle={CHART_TOOLTIP_ITEM_STYLE}
-            labelStyle={CHART_TOOLTIP_LABEL_STYLE}
-            labelFormatter={formatFullDate}
-            formatter={(value: number, name: string) => [
-              value != null ? `${value.toFixed(2)} ${currency}` : '—',
-              name
-            ]}
-          />
-          <Legend />
-          {data.map((portfolio, i) => (
-            <Line
-              key={portfolio.name}
-              type="monotone"
-              dataKey={portfolio.name}
-              stroke={getPortfolioColor(i)}
-              dot={false}
-              strokeWidth={highlightedIndex != null ? (i === highlightedIndex ? 3 : 1.5) : 2}
-              strokeOpacity={highlightedIndex != null ? (i === highlightedIndex ? 1 : 0.2) : 1}
+      {chartData.length === 0 ? (
+        <div className="chart-empty">
+          <p>Select portfolios to compare performance</p>
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#d1e3dd" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDateLabel}
+              ticks={ticks}
+              {...CHART_AXIS_STYLE}
             />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+            <YAxis
+              domain={['auto', 'auto']}
+              {...CHART_AXIS_STYLE}
+            />
+            <Tooltip
+              contentStyle={CHART_TOOLTIP_STYLE}
+              itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+              labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+              labelFormatter={formatFullDate}
+              formatter={(value: number, name: string) => [
+                value != null ? `${value.toFixed(2)} ${currency}` : '—',
+                name
+              ]}
+            />
+            <Legend />
+            {data.map((portfolio, i) => (
+              <Line
+                key={portfolio.name}
+                type="monotone"
+                dataKey={portfolio.name}
+                stroke={getPortfolioColor(i)}
+                dot={false}
+                strokeWidth={highlightedIndex != null ? (i === highlightedIndex ? 3 : 1.5) : 2}
+                strokeOpacity={highlightedIndex != null ? (i === highlightedIndex ? 1 : 0.2) : 1}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

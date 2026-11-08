@@ -11,7 +11,6 @@ interface PortfolioPopoverProps {
   assets: Asset[];
   onEdit?: () => void;
   onRemove?: () => void;
-  onClose: () => void;
 }
 
 export default function PortfolioPopover({
@@ -19,7 +18,6 @@ export default function PortfolioPopover({
   assets,
   onEdit,
   onRemove,
-  onClose,
 }: PortfolioPopoverProps) {
   const chartData = assets.map((asset, i) => ({
     name: asset.symbol,
@@ -52,10 +50,7 @@ export default function PortfolioPopover({
               </Pie>
               <Tooltip
                 formatter={(value: number) => `${value.toFixed(1)}%`}
-                contentStyle={{
-                  ...CHART_TOOLTIP_STYLE,
-                  fontSize: '12px',
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
               />
             </PieChart>
           </ResponsiveContainer>

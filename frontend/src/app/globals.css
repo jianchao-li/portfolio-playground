@@ -1289,37 +1289,6 @@ input[type="date"]:focus {
   margin-bottom: 1rem;
 }
 
-.insights-selector {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.insights-selector label {
-  font-size: 0.85rem;
-  color: var(--fg-secondary);
-  font-weight: 500;
-}
-
-.insights-selector select {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-solid);
-  color: var(--fg);
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.insights-selector select:focus {
-  outline: none;
-  border-color: #9563a0;
-  box-shadow: 0 0 0 3px rgba(149, 99, 160, 0.2);
-}
-
 /* AI Insights Panel */
 .insights-panel {
   background: var(--card-bg);
@@ -1443,8 +1412,7 @@ input[type="date"]:focus {
   padding: 1.25rem 1.5rem;
 }
 
-.insights-idle,
-.insights-ready {
+.insights-idle {
   text-align: center;
 }
 
@@ -1453,13 +1421,6 @@ input[type="date"]:focus {
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
   line-height: 1.5;
-}
-
-.insights-disclaimer {
-  color: var(--fg-tertiary);
-  font-size: 0.75rem;
-  margin-bottom: 1rem;
-  font-style: italic;
 }
 
 .insights-target {
@@ -1558,38 +1519,6 @@ input[type="date"]:focus {
   animation: spin 0.8s linear infinite;
 }
 
-.insights-output {
-  text-align: left;
-  font-size: 0.9rem;
-  line-height: 1.6;
-  color: var(--fg);
-}
-
-.insights-output-streaming {
-  opacity: 0.9;
-}
-
-.insights-heading {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--fg);
-  margin: 1rem 0 0.5rem 0;
-}
-
-.insights-heading:first-child {
-  margin-top: 0;
-}
-
-.insights-paragraph {
-  margin: 0 0 0.5rem 0;
-  color: var(--fg);
-}
-
-.insights-bullet {
-  margin: 0.25rem 0 0.25rem 1.25rem;
-  color: var(--fg-secondary);
-}
-
 .insights-result {
   display: flex;
   flex-direction: column;
@@ -1627,107 +1556,6 @@ input[type="date"]:focus {
   margin: 0;
 }
 
-/* Insights ranking list */
-.insights-ranking {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 1rem 0;
-  counter-reset: ranking;
-}
-
-.insights-rank-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-sm);
-  margin-bottom: 0.25rem;
-  background: var(--bg-solid);
-  counter-increment: ranking;
-}
-
-.insights-rank-item::before {
-  content: counter(ranking) ".";
-  font-weight: 600;
-  color: var(--fg-secondary);
-  margin-right: 0.5rem;
-  min-width: 1.5rem;
-}
-
-.rank-name {
-  flex: 1;
-  font-weight: 500;
-  color: var(--fg);
-}
-
-.rank-value {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.rank-value.positive {
-  color: var(--success);
-}
-
-.rank-value.negative {
-  color: var(--danger);
-}
-
-/* Insights metrics */
-.insights-metrics {
-  margin-bottom: 1rem;
-}
-
-.metric-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.metric-row:last-child {
-  border-bottom: none;
-}
-
-.metric-label {
-  color: var(--fg-secondary);
-  font-size: 0.85rem;
-}
-
-.metric-value {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--fg);
-}
-
-.metric-value.positive {
-  color: var(--success);
-}
-
-.metric-value.negative {
-  color: var(--danger);
-}
-
-/* Insights trade-offs */
-.insights-tradeoffs {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.insights-tradeoffs .insights-bullet {
-  margin: 0.5rem 0;
-  padding-left: 0;
-  color: var(--fg-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.insights-tradeoffs .insights-bullet strong {
-  color: var(--fg);
-}
-
 /* Insights summary */
 .insights-summary {
   margin-bottom: 1.25rem;
@@ -1738,48 +1566,6 @@ input[type="date"]:focus {
   line-height: 1.7;
   color: var(--fg);
   margin: 0;
-}
-
-/* Comparison grid */
-.insights-comparison-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.75rem;
-}
-
-.comparison-item {
-  background: var(--bg-solid);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem;
-  text-align: center;
-}
-
-.comparison-label {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--fg-secondary);
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.comparison-value {
-  display: block;
-  font-weight: 600;
-  color: var(--fg);
-  font-size: 0.9rem;
-  margin-bottom: 0.15rem;
-}
-
-.comparison-detail {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--fg-secondary);
-}
-
-.comparison-detail.positive {
-  color: var(--success);
-  font-weight: 600;
 }
 
 /* Copyright Footer */

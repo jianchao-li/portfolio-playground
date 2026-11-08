@@ -1,21 +1,14 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { PortfolioStats } from '@/lib/api';
+import { formatPercent } from '@/lib/formatting';
 
 export type LLMStatus = 'idle' | 'loading' | 'ready' | 'generating' | 'error';
 
 export interface LLMProgress {
   text: string;
   progress: number;
-}
-
-export interface PortfolioData {
-  name: string;
-  total_return: number;
-  annualized_return: number;
-  volatility: number;
-  sharpe_ratio: number;
-  max_drawdown: number;
 }
 
 // Larger model for better accuracy
@@ -27,14 +20,12 @@ const COMPARISON_SYSTEM_PROMPT = `You are a concise financial analyst. When give
 // System prompt for single portfolio analysis
 const SINGLE_SYSTEM_PROMPT = `You are a concise financial analyst. When given portfolio data, write a brief analysis in 2-3 sentences covering performance, risk characteristics, and any notable observations. Use the exact numbers provided. Do not give investment advice.`;
 
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`;
-}
+const pct = (value: number) => formatPercent(value, 1);
 
-function buildComparisonPrompt(portfolios: PortfolioData[]): string {
+function buildComparisonPrompt(portfolios: PortfolioStats[]): string {
   // Build clear data table
   const dataLines = portfolios.map(p =>
-    `- ${p.name}: Total Return ${formatPercent(p.total_return)}, Annualized ${formatPercent(p.annualized_return)}, Volatility ${formatPercent(p.volatility)}, Sharpe ${p.sharpe_ratio.toFixed(2)}, Max Drawdown ${formatPercent(p.max_drawdown)}`
+    `- ${p.name}: Total Return ${pct(p.total_return)}, Annualized ${pct(p.annualized_return)}, Volatility ${pct(p.volatility)}, Sharpe ${p.sharpe_ratio.toFixed(2)}, Max Drawdown ${pct(p.max_drawdown)}`
   ).join('\n');
 
   return `Compare these ${portfolios.length} investment portfolios:
@@ -44,15 +35,15 @@ ${dataLines}
 Write a 3-4 sentence comparison. Mention which had the highest return, best Sharpe ratio, and the key trade-offs between them.`;
 }
 
-function buildSinglePrompt(data: PortfolioData): string {
+function buildSinglePrompt(data: PortfolioStats): string {
   return `Analyze this portfolio:
 
 ${data.name}:
-- Total Return: ${formatPercent(data.total_return)}
-- Annualized Return: ${formatPercent(data.annualized_return)}
-- Volatility: ${formatPercent(data.volatility)}
+- Total Return: ${pct(data.total_return)}
+- Annualized Return: ${pct(data.annualized_return)}
+- Volatility: ${pct(data.volatility)}
 - Sharpe Ratio: ${data.sharpe_ratio.toFixed(2)}
-- Max Drawdown: ${formatPercent(data.max_drawdown)}
+- Max Drawdown: ${pct(data.max_drawdown)}
 
 Write a 2-3 sentence analysis of this portfolio's performance and risk characteristics.`;
 }
@@ -62,75 +53,16 @@ type MLCEngine = Awaited<ReturnType<typeof import('@mlc-ai/web-llm')['CreateMLCE
 
 export function useLLM() {
   const engineRef = useRef<MLCEngine | null>(null);
+  const loadingRef = useRef(false);
   const [status, setStatus] = useState<LLMStatus>('idle');
   const [progress, setProgress] = useState<LLMProgress>({ text: '', progress: 0 });
   const [output, setOutput] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [supportsWebGPU, setSupportsWebGPU] = useState<boolean | null>(null);
 
-  // Check WebGPU support on mount and auto-load model if supported
-  useEffect(() => {
-    const checkWebGPUAndInit = async () => {
-      if (typeof window === 'undefined' || typeof navigator === 'undefined') {
-        setSupportsWebGPU(false);
-        return;
-      }
-
-      if (!('gpu' in navigator)) {
-        setSupportsWebGPU(false);
-        return;
-      }
-
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const gpu = (navigator as any).gpu;
-        const adapter = await gpu.requestAdapter();
-        const supported = adapter !== null;
-        setSupportsWebGPU(supported);
-
-        // Auto-load model if WebGPU is supported
-        if (supported && !engineRef.current && status === 'idle') {
-          setStatus('loading');
-          setError(null);
-          setProgress({ text: 'Loading AI model (~900MB, may take a while)...', progress: 0 });
-
-          try {
-            const { CreateMLCEngine } = await import('@mlc-ai/web-llm');
-
-            const engine = await CreateMLCEngine(MODEL_ID, {
-              initProgressCallback: (report) => {
-                let text = report.text;
-                if (text.toLowerCase().includes('start to fetch') || text.toLowerCase().includes('fetching param')) {
-                  text = 'Downloading model (~900MB, may take a while)...';
-                } else if (text.toLowerCase().includes('loading model')) {
-                  text = 'Loading model into memory...';
-                }
-                setProgress({
-                  text,
-                  progress: report.progress,
-                });
-              },
-            });
-
-            engineRef.current = engine;
-            setStatus('ready');
-            setProgress({ text: 'Model loaded', progress: 1 });
-          } catch (err) {
-            setStatus('error');
-            setError(err instanceof Error ? err.message : 'Failed to load model');
-          }
-        }
-      } catch {
-        setSupportsWebGPU(false);
-      }
-    };
-
-    checkWebGPUAndInit();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const init = useCallback(async () => {
-    if (engineRef.current || status === 'loading') return;
+  const loadModel = useCallback(async () => {
+    if (engineRef.current || loadingRef.current) return;
+    loadingRef.current = true;
 
     setStatus('loading');
     setError(null);
@@ -144,15 +76,13 @@ export function useLLM() {
         initProgressCallback: (report) => {
           // Transform technical messages into user-friendly ones
           let text = report.text;
-          if (text.toLowerCase().includes('start to fetch') || text.toLowerCase().includes('fetching param')) {
+          const lower = text.toLowerCase();
+          if (lower.includes('start to fetch') || lower.includes('fetching param')) {
             text = 'Downloading model (~900MB, may take a while)...';
-          } else if (text.toLowerCase().includes('loading model')) {
+          } else if (lower.includes('loading model')) {
             text = 'Loading model into memory...';
           }
-          setProgress({
-            text,
-            progress: report.progress,
-          });
+          setProgress({ text, progress: report.progress });
         },
       });
 
@@ -162,10 +92,34 @@ export function useLLM() {
     } catch (err) {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to load model');
+    } finally {
+      loadingRef.current = false;
     }
-  }, [status]);
+  }, []);
 
-  const generate = useCallback(async (portfolios: PortfolioData[]) => {
+  // Check WebGPU support on mount and auto-load model if supported
+  useEffect(() => {
+    const checkWebGPUAndInit = async () => {
+      if (typeof navigator === 'undefined' || !('gpu' in navigator)) {
+        setSupportsWebGPU(false);
+        return;
+      }
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const adapter = await (navigator as any).gpu.requestAdapter();
+        const supported = adapter !== null;
+        setSupportsWebGPU(supported);
+        if (supported) loadModel();
+      } catch {
+        setSupportsWebGPU(false);
+      }
+    };
+
+    checkWebGPUAndInit();
+  }, [loadModel]);
+
+  const generate = useCallback(async (portfolios: PortfolioStats[]) => {
     if (!engineRef.current || status !== 'ready' || portfolios.length === 0) return;
 
     setOutput('');
@@ -179,12 +133,6 @@ export function useLLM() {
       const userPrompt = isComparison
         ? buildComparisonPrompt(portfolios)
         : buildSinglePrompt(portfolios[0]);
-
-      // Debug: log the prompt being sent
-      console.log('=== LLM Prompt Debug ===');
-      console.log('Portfolios received:', portfolios);
-      console.log('User prompt:', userPrompt);
-      console.log('========================');
 
       const stream = await engineRef.current.chat.completions.create({
         messages: [
@@ -221,7 +169,7 @@ export function useLLM() {
     output,
     error,
     supportsWebGPU,
-    init,
+    init: loadModel,
     generate,
     reset,
   };

@@ -1,14 +1,14 @@
 import logging
 import threading
-from datetime import date, timedelta
+from datetime import date
 
 import pandas as pd
 import quantstats as qs
-import yfinance as yf
 from cachetools import TTLCache
 
 from app.models.portfolio import Portfolio, PortfolioStats, PerformanceData
-from app.services.currency import CurrencyService, extract_close_prices
+from app.services.currency import CurrencyService
+from app.services.market_data import cached, clip_to_range, download, extract_close_prices
 
 _prices_cache = TTLCache(maxsize=32, ttl=300)
 _prices_lock = threading.Lock()
@@ -24,39 +24,22 @@ class PortfolioAnalyzer:
 
     def fetch_risk_free_rate(self, start_date: date, end_date: date) -> float:
         """Fetch average annual risk-free rate (3-month T-bill) for date range."""
-        key = (start_date, end_date)
-        with _rf_lock:
-            if key in _rf_cache:
-                return _rf_cache[key]
+        def compute() -> float:
+            try:
+                data = download('^IRX', start_date, end_date)
+                if len(data) > 0:
+                    if isinstance(data.columns, pd.MultiIndex):
+                        rates = data['Close']['^IRX']
+                    else:
+                        rates = data['Close']
+                    rates = clip_to_range(rates.ffill().dropna(), start_date, end_date)
+                    # Convert percentage to decimal (e.g., 4.5% -> 0.045)
+                    return float(rates.mean()) / 100
+            except Exception as e:
+                logging.warning("Failed to fetch risk-free rates: %s", e)
+            return DEFAULT_RISK_FREE_RATE
 
-        adjusted_start = start_date - timedelta(days=5)
-
-        try:
-            data = yf.download(
-                tickers='^IRX',
-                start=adjusted_start.isoformat(),
-                end=end_date.isoformat(),
-                progress=False
-            )
-            if len(data) > 0:
-                if isinstance(data.columns, pd.MultiIndex):
-                    rates = data['Close']['^IRX']
-                else:
-                    rates = data['Close']
-                rates = rates.ffill().dropna()
-                rates = rates[rates.index >= pd.Timestamp(start_date)]
-                rates = rates[rates.index <= pd.Timestamp(end_date)]
-                # Convert percentage to decimal (e.g., 4.5% -> 0.045)
-                rf_annual = float(rates.mean()) / 100
-                with _rf_lock:
-                    _rf_cache[key] = rf_annual
-                return rf_annual
-        except Exception as e:
-            logging.warning("Failed to fetch risk-free rates: %s", e)
-
-        with _rf_lock:
-            _rf_cache[key] = DEFAULT_RISK_FREE_RATE
-        return DEFAULT_RISK_FREE_RATE
+        return cached(_rf_cache, _rf_lock, (start_date, end_date), compute)
 
     def fetch_prices(self, symbols: list[str], start_date: date, end_date: date,
                      batch: bool = False) -> pd.DataFrame:
@@ -65,46 +48,31 @@ class PortfolioAnalyzer:
         If batch=True, skip cross-column dropna so each portfolio can apply
         it on its own subset (avoids a newer ticker trimming dates for all).
         """
-        key = (frozenset(symbols), start_date, end_date, batch)
-        with _prices_lock:
-            if key in _prices_cache:
-                return _prices_cache[key]
+        def compute() -> pd.DataFrame:
+            data = download(symbols, start_date, end_date)
+            prices = extract_close_prices(data, error_context=", ".join(symbols))
 
-        # Add buffer for weekend/holiday adjustments
-        adjusted_start = start_date - timedelta(days=5)
+            # Ensure we have a DataFrame with symbol columns
+            if isinstance(prices, pd.Series):
+                prices = prices.to_frame(symbols[0])
 
-        data = yf.download(
-            tickers=symbols,
-            start=adjusted_start.isoformat(),
-            end=end_date.isoformat(),
-            progress=False
-        )
+            # Validate: check for symbols missing entirely or with no price data
+            bad_symbols = [s for s in symbols if s not in prices.columns or prices[s].isna().all()]
+            if bad_symbols:
+                raise ValueError(f"No price data found for: {', '.join(bad_symbols)}")
 
-        # Extract close prices using shared helper
-        prices = extract_close_prices(data, error_context=", ".join(symbols))
+            # Forward fill missing data, then filter to requested range
+            prices = prices.ffill()
+            if not batch:
+                prices = prices.dropna()
+            prices = clip_to_range(prices, start_date, end_date)
 
-        # Ensure we have a DataFrame with symbol columns
-        if isinstance(prices, pd.Series):
-            prices = prices.to_frame(symbols[0])
+            if prices.empty:
+                raise ValueError("No price data available for the selected date range")
+            return prices
 
-        # Validate: check for symbols missing entirely or with no price data
-        bad_symbols = [s for s in symbols if s not in prices.columns or prices[s].isna().all()]
-        if bad_symbols:
-            raise ValueError(f"No price data found for: {', '.join(bad_symbols)}")
-
-        # Forward fill missing data, then filter to requested range
-        prices = prices.ffill()
-        if not batch:
-            prices = prices.dropna()
-        prices = prices[prices.index >= pd.Timestamp(start_date)]
-        prices = prices[prices.index <= pd.Timestamp(end_date)]
-
-        if prices.empty:
-            raise ValueError("No price data available for the selected date range")
-
-        with _prices_lock:
-            _prices_cache[key] = prices
-        return prices
+        return cached(_prices_cache, _prices_lock,
+                      (frozenset(symbols), start_date, end_date, batch), compute)
 
     def calculate_portfolio_values(self, portfolio: Portfolio, prices: pd.DataFrame) -> pd.Series:
         """Calculate daily portfolio values based on weights."""
@@ -140,14 +108,9 @@ class PortfolioAnalyzer:
         """Full analysis of a portfolio."""
         symbols = [asset.symbol for asset in portfolio.assets]
         if all_prices is not None:
-            missing = [s for s in symbols if s not in all_prices.columns]
-            if missing:
-                raise ValueError(f"No price data found for: {', '.join(missing)}")
-            subset = all_prices[symbols]
-            bad_symbols = [s for s in symbols if subset[s].isna().all()]
-            if bad_symbols:
-                raise ValueError(f"No price data found for: {', '.join(bad_symbols)}")
-            prices = subset.dropna()
+            # all_prices comes from fetch_prices(batch=True), which already
+            # validated every symbol; only the per-portfolio dropna remains.
+            prices = all_prices[symbols].dropna()
             if prices.empty:
                 raise ValueError("No price data available for the selected date range")
         else:

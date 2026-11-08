@@ -52,16 +52,8 @@ export default function PortfolioBuilder({
     setAssets(assets.filter((_, i) => i !== index));
   };
 
-  const updateSymbol = (index: number, symbol: string) => {
-    const updated = [...assets];
-    updated[index].symbol = symbol.toUpperCase();
-    setAssets(updated);
-  };
-
-  const updateWeight = (index: number, value: string) => {
-    const updated = [...assets];
-    updated[index].weight = value;
-    setAssets(updated);
+  const updateAsset = (index: number, patch: Partial<AssetInput>) => {
+    setAssets(assets.map((a, i) => (i === index ? { ...a, ...patch } : a)));
   };
 
   const parseWeight = (w: string) => {
@@ -118,7 +110,7 @@ export default function PortfolioBuilder({
           <div key={`asset-${asset.symbol || 'empty'}-${i}`} className="asset-row">
             <SymbolInput
               value={asset.symbol}
-              onChange={(symbol) => updateSymbol(i, symbol)}
+              onChange={(symbol) => updateAsset(i, { symbol: symbol.toUpperCase() })}
               placeholder="Search symbol..."
             />
             <input
@@ -126,7 +118,7 @@ export default function PortfolioBuilder({
               placeholder="Weight"
               step="0.01"
               value={asset.weight}
-              onChange={(e) => updateWeight(i, e.target.value)}
+              onChange={(e) => updateAsset(i, { weight: e.target.value })}
             />
             <button type="button" onClick={() => removeAsset(i)} className="remove-btn">
               ×
