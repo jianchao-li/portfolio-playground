@@ -1,5 +1,23 @@
 # Version History
 
+## 2026-11-08
+
+### Performance
+- **Server-Rendered Default Portfolios**: The page prefetches the default portfolios on the server and regenerates hourly (ISR), so the first paint no longer waits on the backend
+- **Faster Backend Cold Start**: Replaced QuantStats with equivalent pandas formulas, cutting import time from ~2.3s to ~0.9s and reducing memory use
+- **Opt-In AI Model Download**: The ~900MB model now auto-loads only when it is already cached; first-time visitors opt in with one click, and the engine runs in a Web Worker
+- Fetch the risk-free rate in the same Yahoo Finance request as prices
+- Gzip API responses and cache past date ranges for longer
+
+### Improvements
+- Removed dead code and simplified frontend components and backend services
+
+### Bug Fixes
+- Fix custom portfolio form keeping previous input after closing
+- Fix AI analysis Retry doing nothing after a generation error
+
+---
+
 ## 2026-02-22
 
 ### New Features

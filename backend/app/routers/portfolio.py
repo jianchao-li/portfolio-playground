@@ -58,6 +58,15 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
 
     try:
         analyzer = PortfolioAnalyzer()
+
+        all_symbols = list({
+            asset.symbol
+            for portfolio in body.portfolios
+            for asset in portfolio.assets
+        })
+        # Fetch prices first: it also downloads and caches the risk-free rate
+        all_prices = analyzer.fetch_prices(all_symbols, body.start_date, body.end_date,
+                                           batch=True)
         rf_rate = analyzer.fetch_risk_free_rate(body.start_date, body.end_date)
 
         exchange_rates = None
@@ -65,14 +74,6 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
             exchange_rates = analyzer.currency_service.fetch_exchange_rates(
                 body.currency, body.start_date, body.end_date
             )
-
-        all_symbols = list({
-            asset.symbol
-            for portfolio in body.portfolios
-            for asset in portfolio.assets
-        })
-        all_prices = analyzer.fetch_prices(all_symbols, body.start_date, body.end_date,
-                                           batch=True)
 
         results = []
 

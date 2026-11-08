@@ -2,11 +2,10 @@ import threading
 from datetime import date
 
 import pandas as pd
-from cachetools import TTLCache
 
-from app.services.market_data import cached, clip_to_range, download, extract_close_prices
+from app.services.market_data import cached, clip_to_range, download, extract_close_prices, make_cache
 
-_fx_cache = TTLCache(maxsize=16, ttl=300)
+_fx_cache = make_cache(maxsize=16)
 _fx_lock = threading.Lock()
 
 SUPPORTED_CURRENCIES = {

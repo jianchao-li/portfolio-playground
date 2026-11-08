@@ -17,7 +17,7 @@ A web application for analyzing and comparing investment portfolio performance. 
 
 ![Architecture](architecture.png)
 
-**Frontend** (`frontend/`) -- Next.js 14 with React 18 and TypeScript. The main single-page app (`page.tsx`) orchestrates several components:
+**Frontend** (`frontend/`) -- Next.js 14 with React 18 and TypeScript. The page (`page.tsx`) is a server component that prefetches the default portfolios and is regenerated hourly (ISR), so the first paint already contains data. The interactive app (`PortfolioPlayground.tsx`) orchestrates several components:
 - `PerformanceChart` (Recharts) -- Normalized line chart comparing portfolio performance
 - `StatsTable` -- Side-by-side financial metrics comparison
 - `PortfolioBuilder` / `PortfolioPopover` -- Portfolio construction and asset allocation views
@@ -26,10 +26,10 @@ A web application for analyzing and comparing investment portfolio performance. 
 The API client (`lib/api.ts`) handles all backend communication with `fetch()`, `AbortController` for request cancellation, and error handling. Shared utilities include color schemes, formatting helpers, theme configuration, and custom hooks like `useClickOutside`.
 
 **Backend** (`backend/`) -- FastAPI server running on Uvicorn with the following layers:
-- *Middleware* -- CORS support and SlowAPI rate limiting
+- *Middleware* -- CORS support, gzip compression, and SlowAPI rate limiting
 - *Router* (`/api/portfolio`) -- `POST /analyze`, `POST /compare`, `GET /currencies`, `GET /symbols/search`
-- *Services* -- `PortfolioAnalyzer` computes returns and metrics; `CurrencyService` handles FX conversions
-- *Cache* -- In-memory TTL cache (5 min) for prices, risk-free rates, and FX rates
+- *Services* -- `PortfolioAnalyzer` computes returns and metrics with pandas; `CurrencyService` handles FX conversions
+- *Cache* -- In-memory cache for prices, risk-free rates, and FX rates (5 min for ranges ending today, 6 h for past ranges)
 
 **External APIs** (Yahoo Finance) -- The backend fetches data via:
 - `yfinance` library -- Stock/ETF historical prices

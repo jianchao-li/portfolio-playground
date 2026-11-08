@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useLLM, LLMProgress } from '@/hooks/useLLM';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLLM, LLMProgress, MODEL_DOWNLOAD_SIZE } from '@/hooks/useLLM';
 import { PortfolioStats } from '@/lib/api';
 
 function ProgressBar({ progress }: { progress: LLMProgress }) {
@@ -15,6 +15,14 @@ function ProgressBar({ progress }: { progress: LLMProgress }) {
       </div>
       <p className="insights-progress-text">{progress.text}</p>
     </div>
+  );
+}
+
+function DownloadNote() {
+  return (
+    <p className="insights-description">
+      Runs a local AI model in your browser: a one-time {MODEL_DOWNLOAD_SIZE} download, cached for later visits.
+    </p>
   );
 }
 
@@ -51,6 +59,22 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
       generate(portfolios);
     }
   };
+
+  // First click on an unloaded model: download it, then generate once ready
+  const generateWhenReady = useRef(false);
+  const handleLoadAndGenerate = () => {
+    generateWhenReady.current = true;
+    init();
+  };
+  useEffect(() => {
+    if (status === 'ready' && generateWhenReady.current) {
+      generateWhenReady.current = false;
+      handleGenerate();
+    } else if (status === 'error') {
+      generateWhenReady.current = false;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   // Generate display text for portfolios being analyzed
   const portfolioNames = useMemo(() => {
@@ -95,7 +119,14 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
           {status === 'ready' && <span className="insights-badge">Local LLM</span>}
         </div>
         <div className="insights-content">
-          {status === 'loading' ? (
+          {status === 'idle' ? (
+            <div className="insights-idle">
+              <DownloadNote />
+              <button onClick={init} className="insights-btn insights-btn-primary">
+                Enable AI Analysis
+              </button>
+            </div>
+          ) : status === 'loading' ? (
             <ProgressBar progress={progress} />
           ) : status === 'error' ? (
             <ErrorBox message={error || 'Failed to load model'} onRetry={init} />
@@ -130,6 +161,19 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
       </div>
 
       <div className="insights-content">
+        {/* Model not loaded yet - one click downloads it, then generates */}
+        {status === 'idle' && (
+          <div className="insights-idle">
+            <p className="insights-description">
+              {isComparison ? 'Compare' : 'Analyze'}: {portfolioNames}
+            </p>
+            <DownloadNote />
+            <button onClick={handleLoadAndGenerate} className="insights-btn insights-btn-primary">
+              {isComparison ? 'Compare Portfolios' : 'Generate Analysis'}
+            </button>
+          </div>
+        )}
+
         {/* Ready state without output - show generate button */}
         {status === 'ready' && !output && (
           <div className="insights-idle">
