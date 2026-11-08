@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { Asset } from '@/lib/api';
 import { formatPercent } from '@/lib/formatting';
+import { MAX_NAME_LENGTH } from '@/lib/urlState';
 import SymbolInput from './SymbolInput';
 
 interface PortfolioBuilderProps {
@@ -14,17 +15,20 @@ interface PortfolioBuilderProps {
 }
 
 interface AssetInput {
+  /** Stable React key: must not change while the user edits the row */
+  id: number;
   symbol: string;
   weight: string;
 }
 
+let nextAssetId = 0;
+const newAssetInput = (symbol = '', weight = ''): AssetInput => ({ id: nextAssetId++, symbol, weight });
+
 function toAssetInputs(assets: Asset[]): AssetInput[] {
-  return assets.map(a => ({ symbol: a.symbol, weight: String(a.weight) }));
+  return assets.map(a => newAssetInput(a.symbol, String(a.weight)));
 }
 
-const DEFAULT_ASSET_INPUTS: AssetInput[] = [
-  { symbol: '', weight: '' },
-];
+const defaultAssetInputs = (): AssetInput[] => [newAssetInput()];
 
 export default function PortfolioBuilder({
   onSubmit,
@@ -33,19 +37,20 @@ export default function PortfolioBuilder({
   initialAssets,
   submitLabel,
 }: PortfolioBuilderProps) {
+  const nameId = useId();
   const [name, setName] = useState(initialName);
   const [assets, setAssets] = useState<AssetInput[]>(
-    initialAssets ? toAssetInputs(initialAssets) : DEFAULT_ASSET_INPUTS
+    () => (initialAssets ? toAssetInputs(initialAssets) : defaultAssetInputs())
   );
 
   // Reset form when initial values change (for editing different portfolios)
   useEffect(() => {
     setName(initialName);
-    setAssets(initialAssets ? toAssetInputs(initialAssets) : DEFAULT_ASSET_INPUTS);
+    setAssets(initialAssets ? toAssetInputs(initialAssets) : defaultAssetInputs());
   }, [initialName, initialAssets]);
 
   const addAsset = () => {
-    setAssets([...assets, { symbol: '', weight: '' }]);
+    setAssets([...assets, newAssetInput()]);
   };
 
   const removeAsset = (index: number) => {
@@ -95,11 +100,13 @@ export default function PortfolioBuilder({
   return (
     <form onSubmit={handleSubmit} className="portfolio-builder">
       <div className="form-group">
-        <label>Portfolio Name</label>
+        <label htmlFor={nameId}>Portfolio Name</label>
         <input
+          id={nameId}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          maxLength={MAX_NAME_LENGTH}
           required
         />
       </div>
@@ -107,21 +114,28 @@ export default function PortfolioBuilder({
       <div className="assets-list">
         <h3>Assets</h3>
         {assets.map((asset, i) => (
-          <div key={`asset-${asset.symbol || 'empty'}-${i}`} className="asset-row">
+          <div key={asset.id} className="asset-row">
             <SymbolInput
               value={asset.symbol}
               onChange={(symbol) => updateAsset(i, { symbol: symbol.toUpperCase() })}
               placeholder="Search symbol..."
+              ariaLabel={`Ticker for asset ${i + 1}`}
             />
             <input
+              aria-label={`Weight for asset ${i + 1}${asset.symbol ? ` (${asset.symbol})` : ''}, between 0 and 1`}
               type="number"
               placeholder="Weight"
               step="0.01"
               value={asset.weight}
               onChange={(e) => updateAsset(i, { weight: e.target.value })}
             />
-            <button type="button" onClick={() => removeAsset(i)} className="remove-btn">
-              ×
+            <button
+              type="button"
+              onClick={() => removeAsset(i)}
+              className="remove-btn"
+              aria-label={`Remove asset ${i + 1}${asset.symbol ? ` (${asset.symbol})` : ''}`}
+            >
+              <span aria-hidden="true">×</span>
             </button>
           </div>
         ))}

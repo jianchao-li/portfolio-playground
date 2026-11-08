@@ -1,4 +1,7 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+import { SUPPORTED_CURRENCIES } from '@/lib/currencies';
+import { parseRetryAfter, rateLimitMessage } from '@/lib/errors';
+
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export interface CurrencyInfo {
   code: string;
@@ -11,6 +14,9 @@ export interface Asset {
   weight: number;
 }
 
+/** Rebalancing schedule; 'none' = buy-and-hold. */
+export type Rebalance = 'none' | 'monthly' | 'quarterly' | 'annually';
+
 export interface Portfolio {
   name: string;
   assets: Asset[];
@@ -19,9 +25,12 @@ export interface Portfolio {
 export interface PortfolioStats {
   name: string;
   total_return: number;
-  annualized_return: number;
-  volatility: number;
-  sharpe_ratio: number;
+  /** null when the range is too short to annualize meaningfully */
+  annualized_return: number | null;
+  volatility: number | null;
+  sharpe_ratio: number | null;
+  /** null when undefined (fewer than 2 returns, or none below the risk-free rate) */
+  sortino_ratio: number | null;
   max_drawdown: number;
 }
 
@@ -30,10 +39,29 @@ export interface PerformanceData {
   values: number[];
 }
 
+/** An asset as analyzed by the backend (symbol normalized, duplicates merged). */
+export interface AssetInfo extends Asset {
+  /**
+   * Trading currency reported by Yahoo ("USD", "JPY", "GBp" = pence, ...), or
+   * null if unknown. Prices are NOT converted from it yet.
+   */
+  currency: string | null;
+}
+
 export interface AnalysisResponse {
   stats: PortfolioStats;
   performance: PerformanceData;
   currency: string;
+  assets: AssetInfo[];
+  /** First/last date with data in the requested range, before any alignment (YYYY-MM-DD). */
+  data_start: string;
+  data_end: string;
+}
+
+export interface ComparisonResponse {
+  portfolios: AnalysisResponse[];
+  /** Date every portfolio was clipped to when align_start was requested and starts differed. */
+  aligned_start: string | null;
 }
 
 async function fetchFromAPI<T>(
@@ -51,6 +79,11 @@ async function fetchFromAPI<T>(
     throw new Error('Unable to reach the server. Is the backend running?');
   }
 
+  if (response.status === 429) {
+    // Rate limited (slowapi): say how long to wait instead of its raw message
+    throw new Error(rateLimitMessage(parseRetryAfter(response.headers.get('Retry-After'))));
+  }
+
   if (!response.ok) {
     let detail: string | undefined;
     try {
@@ -66,12 +99,12 @@ async function fetchFromAPI<T>(
   return response.json();
 }
 
+/**
+ * Supported currencies. Served from a constant bundled with the frontend
+ * (see lib/currencies.ts), so it costs no request to the backend.
+ */
 export async function fetchCurrencies(): Promise<CurrencyInfo[]> {
-  return fetchFromAPI<CurrencyInfo[]>(
-    '/api/portfolio/currencies',
-    {},
-    'Failed to fetch currencies'
-  );
+  return [...SUPPORTED_CURRENCIES];
 }
 
 export async function analyzePortfolio(
@@ -79,7 +112,8 @@ export async function analyzePortfolio(
   startDate: string,
   endDate: string,
   currency: string = 'USD',
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  rebalance: Rebalance = 'none'
 ): Promise<AnalysisResponse> {
   return fetchFromAPI<AnalysisResponse>(
     '/api/portfolio/analyze',
@@ -91,6 +125,7 @@ export async function analyzePortfolio(
         start_date: startDate,
         end_date: endDate,
         currency,
+        rebalance,
       }),
       signal,
     },
@@ -103,9 +138,11 @@ export async function comparePortfolios(
   startDate: string,
   endDate: string,
   currency: string = 'USD',
-  signal?: AbortSignal
-): Promise<{ portfolios: AnalysisResponse[] }> {
-  return fetchFromAPI<{ portfolios: AnalysisResponse[] }>(
+  signal?: AbortSignal,
+  alignStart = false,
+  rebalance: Rebalance = 'none'
+): Promise<ComparisonResponse> {
+  return fetchFromAPI<ComparisonResponse>(
     '/api/portfolio/compare',
     {
       method: 'POST',
@@ -115,6 +152,8 @@ export async function comparePortfolios(
         start_date: startDate,
         end_date: endDate,
         currency,
+        align_start: alignStart,
+        rebalance,
       }),
       signal,
     },

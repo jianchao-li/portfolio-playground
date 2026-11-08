@@ -3,16 +3,35 @@ import logging
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 
-from app.limiter import limiter
+from app.limiter import INTERACTIVE_LIMIT, PREFETCH_LIMIT, limiter
 from app.models.portfolio import (
     AnalysisRequest,
     AnalysisResponse,
+    AssetInfo,
     ComparisonRequest,
+    ComparisonResponse,
+    Portfolio,
     PortfolioStats,
     PerformanceData,
 )
-from app.services.analyzer import PortfolioAnalyzer
+from app.services.analyzer import AnalysisResult, PortfolioAnalyzer
+from app.services.asset_info import get_currencies as get_asset_currencies
 from app.services.currency import get_currency_list
+
+INTERNAL_ERROR_DETAIL = "Internal server error while analyzing portfolios. Please try again later."
+
+def _response(portfolio: Portfolio, result: AnalysisResult, currency: str,
+              asset_currencies: dict[str, str | None]) -> AnalysisResponse:
+    return AnalysisResponse(
+        stats=result.stats,
+        performance=result.performance,
+        currency=currency,
+        assets=[AssetInfo(symbol=a.symbol, weight=a.weight, currency=asset_currencies.get(a.symbol))
+                for a in portfolio.assets],
+        data_start=result.data_start,
+        data_end=result.data_end,
+    )
+
 
 router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
@@ -24,7 +43,7 @@ def get_currencies():
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
-@limiter.limit("20/minute")
+@limiter.limit(INTERACTIVE_LIMIT)
 def analyze_portfolio(request: Request, body: AnalysisRequest):
     """Analyze a single portfolio and return stats + performance data."""
     if not body.portfolio.validate_weights():
@@ -32,23 +51,42 @@ def analyze_portfolio(request: Request, body: AnalysisRequest):
 
     try:
         analyzer = PortfolioAnalyzer()
-        stats, performance = analyzer.analyze(
+        result = analyzer.analyze(
             portfolio=body.portfolio,
             start_date=body.start_date,
             end_date=body.end_date,
-            currency=body.currency
+            currency=body.currency,
+            rebalance=body.rebalance,
         )
-        return AnalysisResponse(stats=stats, performance=performance, currency=body.currency)
+        asset_currencies = get_asset_currencies([a.symbol for a in body.portfolio.assets])
+        return _response(body.portfolio, result, body.currency, asset_currencies)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logging.exception("Portfolio analysis failed")
+        raise HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
 
 
-@router.post("/compare")
-@limiter.limit("20/minute")
+@router.post("/compare", response_model=ComparisonResponse)
+@limiter.limit(INTERACTIVE_LIMIT)
 def compare_portfolios(request: Request, body: ComparisonRequest):
     """Compare multiple portfolios."""
+    return _compare(body)
+
+
+@router.post("/prefetch", response_model=ComparisonResponse)
+@limiter.limit(PREFETCH_LIMIT)
+def prefetch_portfolios(request: Request, body: ComparisonRequest):
+    """Same as /compare, for the frontend's background preset prefetch.
+
+    A separate endpoint with its own (smaller) rate-limit budget, so
+    background prefetches never use up a visitor's /compare budget, and
+    abusing one endpoint can't drain the other.
+    """
+    return _compare(body)
+
+
+def _compare(body: ComparisonRequest) -> ComparisonResponse:
     for portfolio in body.portfolios:
         if not portfolio.validate_weights():
             raise HTTPException(
@@ -65,9 +103,8 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
             for asset in portfolio.assets
         })
         # Fetch prices first: it also downloads and caches the risk-free rate
-        all_prices = analyzer.fetch_prices(all_symbols, body.start_date, body.end_date,
-                                           batch=True)
-        rf_rate = analyzer.fetch_risk_free_rate(body.start_date, body.end_date)
+        all_prices = analyzer.fetch_prices(all_symbols, body.start_date, body.end_date)
+        rf_rates = analyzer.fetch_risk_free_rates(body.start_date, body.end_date)
 
         exchange_rates = None
         if body.currency != "USD":
@@ -75,29 +112,34 @@ def compare_portfolios(request: Request, body: ComparisonRequest):
                 body.currency, body.start_date, body.end_date
             )
 
-        results = []
+        # Clip everyone to the latest common start, only if starts differ
+        aligned_start = (
+            analyzer.common_start(body.portfolios, all_prices, body.start_date, body.end_date)
+            if body.align_start else None
+        )
 
+        asset_currencies = get_asset_currencies(all_symbols)
+        results = []
         for portfolio in body.portfolios:
-            stats, performance = analyzer.analyze(
+            result = analyzer.analyze(
                 portfolio=portfolio,
                 start_date=body.start_date,
                 end_date=body.end_date,
                 currency=body.currency,
-                rf_rate=rf_rate,
+                rf_rates=rf_rates,
                 exchange_rates=exchange_rates,
-                all_prices=all_prices
+                all_prices=all_prices,
+                align_start=aligned_start,
+                rebalance=body.rebalance,
             )
-            results.append({
-                "stats": stats,
-                "performance": performance,
-                "currency": body.currency
-            })
+            results.append(_response(portfolio, result, body.currency, asset_currencies))
 
-        return {"portfolios": results}
+        return ComparisonResponse(portfolios=results, aligned_start=aligned_start)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        logging.exception("Portfolio analysis failed")
+        raise HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
 
 
 @router.get("/symbols/search")

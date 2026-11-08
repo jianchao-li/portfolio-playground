@@ -2,20 +2,22 @@
 
 import { useState, useRef, useCallback, useMemo } from 'react';
 import { CurrencyInfo } from '@/lib/api';
+import { SUPPORTED_CURRENCIES } from '@/lib/currencies';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface CurrencySelectorProps {
   value: string;
   onChange: (currency: string) => void;
   disabled?: boolean;
-  currencies: CurrencyInfo[];
+  /** Defaults to the bundled list of backend-supported currencies */
+  currencies?: readonly CurrencyInfo[];
 }
 
 export default function CurrencySelector({
   value,
   onChange,
   disabled = false,
-  currencies,
+  currencies = SUPPORTED_CURRENCIES,
 }: CurrencySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
