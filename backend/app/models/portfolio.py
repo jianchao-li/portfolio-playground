@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, AfterValidator, model_validator
-from typing import Annotated, Self
+from pydantic import BaseModel, Field, AfterValidator, field_validator, model_validator
+from typing import Annotated, Literal, Self
 from datetime import date, timedelta
 
 from app.services.currency import SUPPORTED_CURRENCIES
@@ -18,10 +18,28 @@ class Asset(BaseModel):
     symbol: str = Field(..., description="Ticker symbol (e.g., 'AAPL', 'SPY')")
     weight: float = Field(..., ge=0, le=1, description="Weight in portfolio (0-1)")
 
+    @field_validator("symbol")
+    @classmethod
+    def normalize_symbol(cls, v: str) -> str:
+        v = v.strip().upper()
+        if not v:
+            raise ValueError("Symbol cannot be empty")
+        return v
+
 
 class Portfolio(BaseModel):
     name: str = Field(..., description="Portfolio name")
     assets: list[Asset] = Field(..., min_length=1, description="List of assets with weights")
+
+    @model_validator(mode="after")
+    def merge_duplicate_symbols(self) -> Self:
+        """Merge repeated symbols (e.g. 'voo' and 'VOO ') by summing their weights."""
+        merged: dict[str, float] = {}
+        for asset in self.assets:
+            merged[asset.symbol] = merged.get(asset.symbol, 0.0) + asset.weight
+        if len(merged) != len(self.assets):
+            self.assets = [Asset.model_construct(symbol=s, weight=w) for s, w in merged.items()]
+        return self
 
     def validate_weights(self) -> bool:
         total = sum(asset.weight for asset in self.assets)
@@ -42,11 +60,18 @@ def _validate_date_range(start_date: date, end_date: date) -> None:
         raise ValueError("Date range cannot exceed 25 years")
 
 
+Rebalance = Literal["none", "monthly", "quarterly", "annually"]
+REBALANCE_DESCRIPTION = (
+    "Reset to target weights on the first trading day of each period (no costs); 'none' = buy-and-hold"
+)
+
+
 class AnalysisRequest(BaseModel):
     portfolio: Portfolio
     start_date: date
     end_date: date
     currency: SupportedCurrency = Field(default="USD", description="Currency for portfolio values")
+    rebalance: Rebalance = Field(default="none", description=REBALANCE_DESCRIPTION)
 
     @model_validator(mode='after')
     def validate_dates(self) -> Self:
@@ -59,6 +84,11 @@ class ComparisonRequest(BaseModel):
     start_date: date
     end_date: date
     currency: SupportedCurrency = Field(default="USD", description="Currency for portfolio values")
+    rebalance: Rebalance = Field(default="none", description=REBALANCE_DESCRIPTION)
+    align_start: bool = Field(
+        default=False,
+        description="Clip every portfolio to the latest common start date (when their data starts differ)",
+    )
 
     @model_validator(mode='after')
     def validate_dates_and_assets(self) -> Self:
@@ -72,9 +102,10 @@ class ComparisonRequest(BaseModel):
 class PortfolioStats(BaseModel):
     name: str
     total_return: float
-    annualized_return: float
-    volatility: float
-    sharpe_ratio: float
+    annualized_return: float | None  # None when the data spans less than ~1 year
+    volatility: float | None  # None when undefined (single return)
+    sharpe_ratio: float | None  # None when undefined (zero variance)
+    sortino_ratio: float | None  # None when undefined (no returns below the risk-free rate)
     max_drawdown: float
 
 
@@ -83,7 +114,26 @@ class PerformanceData(BaseModel):
     values: list[float]  # Normalized to 100 at start
 
 
+class AssetInfo(BaseModel):
+    symbol: str
+    weight: float
+    # Trading currency reported by Yahoo (e.g. "USD", "JPY", "GBp" = pence);
+    # None if unknown. Prices are not converted from it yet.
+    currency: str | None
+
+
 class AnalysisResponse(BaseModel):
     stats: PortfolioStats
     performance: PerformanceData
     currency: str = "USD"
+    assets: list[AssetInfo]
+    # First/last date with data in the requested range, before any alignment
+    data_start: date
+    data_end: date
+
+
+class ComparisonResponse(BaseModel):
+    portfolios: list[AnalysisResponse]
+    # Common start date every portfolio was clipped to, or None if not aligned
+    # (align_start off, or all portfolios already start on the same date)
+    aligned_start: date | None = None

@@ -2,17 +2,51 @@
 
 ## 2026-11-08
 
+### New Features
+- **Shareable Links**: The address bar mirrors the current view (portfolios, dates, currency, alignment, rebalancing) as a versioned, validated query string; a Share button copies it
+- **CSV Export**: Downloads statistics and daily values for the current view, with the date window, currency and methodology in the header; cells are escaped against spreadsheet formula injection
+- **Rebalancing**: None / Monthly / Quarterly / Annually, back to target weights on the first trading day of each period (no costs)
+- **Drawdown View and Sortino Ratio**: Growth/Drawdown chart toggle (drawdown computed in the browser from the loaded series) and a Sortino column using the same risk-free rate and annualization as Sharpe
+- **Align Start Dates**: When portfolios start trading on different dates, stats and chart are clipped to the latest common start by default; can be turned off
+- **Currency Badges**: Holdings priced in a non-USD currency (e.g. JPY, GBp) are flagged as not converted
+- **Date Range Shortcuts**: 1Y / 3Y / 5Y / 10Y / Max
+- **Mobile Layout**: Statistics as per-portfolio cards and inactive presets behind a "+ Add" menu at narrow widths
+
 ### Performance
+- **Server-Renderable Chart**: The first paint renders a downsampled (min/max-preserving) series with no entry animation; chart visible in ~0.44 s instead of 1.79 s, with no layout shift
+- **Smaller Bundle**: First Load JS reduced from 193 kB to ~103 kB (lazy-loaded allocation popover, currency list bundled with the frontend)
+- **Per-Symbol Price Cache**: The backend caches full per-symbol histories and slices ranges from them (refetching when Yahoo re-adjusts past prices); range shortcuts are served from cache in ~10–40 ms
+- **Preset Prefetch**: After the page settles, one batched request loads the presets not shown, so adding one is instant; it skips Save-Data visitors and uses its own rate budget
+- **Backend Wake-Up**: One background `/health` request per session starts waking a sleeping backend before the first interaction
 - **Server-Rendered Default Portfolios**: The page prefetches the default portfolios on the server and regenerates hourly (ISR), so the first paint no longer waits on the backend
 - **Faster Backend Cold Start**: Replaced QuantStats with equivalent pandas formulas, cutting import time from ~2.3s to ~0.9s and reducing memory use
 - **Opt-In AI Model Download**: The ~900MB model now auto-loads only when it is already cached; first-time visitors opt in with one click, and the engine runs in a Web Worker
+- Keep serving the last good page when an hourly regeneration fails, instead of caching a page without data
+- Preconnect to the API origin
 - Fetch the risk-free rate in the same Yahoo Finance request as prices
 - Gzip API responses and cache past date ranges for longer
 
 ### Improvements
+- **Accessibility**: All tooltips, the disclaimer and chip actions are keyboard- and touch-operable buttons; the custom portfolio dialog traps focus and returns it on close; the symbol search is an ARIA combobox; visible focus ring; reduced-motion support; axe reports no violations
+- **Visual Refresh**: Higher-contrast series palette, quieter statistics table with signed values, calmer surfaces
+- **Clearer States**: Guided empty state, stale results dimmed while reloading, errors with Retry, readable rate-limit messages
+- **Methodology Footnote**: Shows the actual data window, currency, dividend reinvestment, rebalancing, calendar-time annualization and risk-free rate
+- **Testing and CI**: Offline backend tests, frontend unit tests, and browser smoke tests against a mock backend, run in GitHub Actions together with type-checking, lint and a production build
+- Annualized return is shown as "—" for ranges shorter than about a year
+- Metadata: page title, description, Open Graph/Twitter card, theme color and app icon
 - Removed dead code and simplified frontend components and backend services
 
 ### Bug Fixes
+- Fix the last selected day being excluded from every range
+- Fix very short ranges crashing the page or returning a server error; ranges under 2 trading days now return a clear message
+- Fix one invalid ticker making every ticker in the request appear invalid
+- Fix stats of a portfolio changing when it is compared with assets that trade on other days (e.g. crypto)
+- Fix a portfolio added during a date or currency change being lost or shown for the wrong range
+- Fix renaming a portfolio creating a duplicate, and silently overwriting a portfolio with the same name
+- Fix the first keystroke wiping an already-selected ticker, and out-of-order symbol search results
+- Fix the chart crashing for ranges of fewer than 3 trading days
+- Fix shared links dropping custom portfolios whose name starts with "@"
+- Normalize ticker case and avoid exposing internal error details
 - Fix custom portfolio form keeping previous input after closing
 - Fix AI analysis Retry doing nothing after a generation error
 

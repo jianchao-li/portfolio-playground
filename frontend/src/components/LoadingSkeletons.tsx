@@ -1,11 +1,12 @@
 'use client';
 
-export function ChartSkeleton() {
+export function ChartSkeleton({ message }: { message?: string }) {
   return (
     <div className="chart-container">
       <h3>Portfolio Performance</h3>
       <div className="skeleton-chart">
         <div className="skeleton-pulse" />
+        {message && <p className="skeleton-message" role="status">{message}</p>}
       </div>
     </div>
   );

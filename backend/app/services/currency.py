@@ -1,12 +1,9 @@
-import threading
 from datetime import date
 
 import pandas as pd
 
-from app.services.market_data import cached, clip_to_range, download, extract_close_prices, make_cache
-
-_fx_cache = make_cache(maxsize=16)
-_fx_lock = threading.Lock()
+from app.services import price_cache
+from app.services.market_data import clip_to_range
 
 SUPPORTED_CURRENCIES = {
     "AED": {"name": "UAE Dirham", "flag": "\U0001f1e6\U0001f1ea", "ticker": "AED=X"},
@@ -70,25 +67,18 @@ class CurrencyService:
         if not currency_info or not currency_info["ticker"]:
             raise ValueError(f"Unsupported currency: {currency}")
 
-        def compute() -> pd.Series:
-            data = download(currency_info["ticker"], start_date, end_date)
-            if data.empty:
-                raise ValueError(f"No exchange rate data available for {currency}")
+        # FX pairs go through the same per-symbol price cache as asset prices
+        rates = price_cache.get_close(currency_info["ticker"], start_date, end_date)
+        if rates.empty:
+            raise ValueError(f"No exchange rate data available for {currency}")
 
-            rates = extract_close_prices(data, error_context=currency)
-            # Flatten to Series if single-ticker DataFrame
-            if isinstance(rates, pd.DataFrame):
-                rates = rates.iloc[:, 0]
+        rates = clip_to_range(rates.ffill().dropna(), start_date, end_date)
+        if rates.empty:
+            raise ValueError(f"No exchange rate data available for {currency} in the specified date range")
 
-            rates = clip_to_range(rates.ffill().dropna(), start_date, end_date)
-            if rates.empty:
-                raise ValueError(f"No exchange rate data available for {currency} in the specified date range")
-
-            # For EUR/GBP/AUD/NZD: quote is XXX/USD, so we need to invert to get USD/XXX
-            # For JPY/CHF/CAD etc.: quote is already USD/XXX
-            return 1 / rates if currency in INVERTED_QUOTES else rates
-
-        return cached(_fx_cache, _fx_lock, (currency, start_date, end_date), compute)
+        # For EUR/GBP/AUD/NZD: quote is XXX/USD, so we need to invert to get USD/XXX
+        # For JPY/CHF/CAD etc.: quote is already USD/XXX
+        return 1 / rates if currency in INVERTED_QUOTES else rates
 
 
 def get_currency_list() -> list[dict]:

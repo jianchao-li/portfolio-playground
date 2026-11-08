@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:currencies": "node scripts/check-currencies.mjs",
+    "test:url": "node --no-warnings --test scripts/url-state.test.mjs",
+    "test:unit": "node --no-warnings --test \"scripts/*.test.mjs\"",
+    "test:smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@mlc-ai/web-llm": "^0.2.78",
@@ -19,8 +23,10 @@
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
-    "typescript": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
     "eslint": "^8.56.0",
-    "eslint-config-next": "14.1.0"
+    "eslint-config-next": "14.1.0",
+    "puppeteer-core": "^25.16.0",
+    "typescript": "^5.3.3"
   }
 }

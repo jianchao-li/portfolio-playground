@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useLLM, LLMProgress, MODEL_DOWNLOAD_SIZE } from '@/hooks/useLLM';
 import { PortfolioStats } from '@/lib/api';
+import InfoTip from './InfoTip';
 
 function ProgressBar({ progress }: { progress: LLMProgress }) {
   return (
@@ -28,7 +29,7 @@ function DownloadNote() {
 
 function ErrorBox({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="insights-error">
+    <div className="insights-error" role="alert">
       <p>{message}</p>
       <button onClick={onRetry} className="insights-btn insights-btn-secondary">
         Retry
@@ -87,26 +88,18 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
   }, [portfolios]);
 
   const isComparison = portfolios.length > 1;
-  const [showDisclaimer, setShowDisclaimer] = useState(false);
 
-  // Still checking WebGPU support
-  if (supportsWebGPU === null) {
-    return null;
-  }
+  // While WebGPU support is still being checked, render the regular (idle)
+  // panel with its buttons disabled: same size as the server render, so the
+  // page doesn't jump once hydration finishes.
+  const checking = supportsWebGPU === null;
 
-  // WebGPU not supported
-  if (!supportsWebGPU) {
+  // WebGPU not supported: one quiet line instead of a whole panel
+  if (supportsWebGPU === false) {
     return (
-      <div className="insights-panel insights-unsupported">
-        <div className="insights-header">
-          <h3>AI Analysis</h3>
-        </div>
-        <div className="insights-content">
-          <p className="insights-unsupported-text">
-            AI analysis requires a WebGPU-enabled browser (Chrome 113+, Edge 113+, or Firefox 118+).
-          </p>
-        </div>
-      </div>
+      <p className="insights-unsupported-line">
+        AI analysis runs locally and needs a browser with WebGPU support, such as a recent Chrome or Edge.
+      </p>
     );
   }
 
@@ -122,7 +115,7 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
           {status === 'idle' ? (
             <div className="insights-idle">
               <DownloadNote />
-              <button onClick={init} className="insights-btn insights-btn-primary">
+              <button onClick={init} disabled={checking} className="insights-btn insights-btn-primary">
                 Enable AI Analysis
               </button>
             </div>
@@ -143,19 +136,15 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
       <div className="insights-header">
         <div className="insights-title-row">
           <h3>AI Analysis</h3>
-          <span
-            className="insights-info-wrapper"
-            onMouseEnter={() => setShowDisclaimer(true)}
-            onMouseLeave={() => setShowDisclaimer(false)}
-            onClick={() => setShowDisclaimer(!showDisclaimer)}
+          <InfoTip
+            label="About AI analysis accuracy"
+            trigger={<span aria-hidden="true">i</span>}
+            triggerClassName="insights-info-icon"
+            wrapperClassName="insights-info-wrapper"
+            tooltipClassName="insights-info-tooltip"
           >
-            <span className="insights-info-icon">i</span>
-            {showDisclaimer && (
-              <div className="insights-info-tooltip">
-                AI-generated analysis may be inaccurate or incorrect. Always verify with the actual data.
-              </div>
-            )}
-          </span>
+            AI-generated analysis may be inaccurate or incorrect. Always verify with the actual data.
+          </InfoTip>
         </div>
         <span className="insights-badge">Local LLM</span>
       </div>
@@ -168,7 +157,7 @@ export default function InsightsPanel({ portfolios }: InsightsPanelProps) {
               {isComparison ? 'Compare' : 'Analyze'}: {portfolioNames}
             </p>
             <DownloadNote />
-            <button onClick={handleLoadAndGenerate} className="insights-btn insights-btn-primary">
+            <button onClick={handleLoadAndGenerate} disabled={checking} className="insights-btn insights-btn-primary">
               {isComparison ? 'Compare Portfolios' : 'Generate Analysis'}
             </button>
           </div>

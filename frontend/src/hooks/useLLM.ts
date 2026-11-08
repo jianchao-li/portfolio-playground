@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { PortfolioStats } from '@/lib/api';
-import { formatPercent } from '@/lib/formatting';
+import { formatNumber, formatPercent } from '@/lib/formatting';
 
 export type LLMStatus = 'idle' | 'loading' | 'ready' | 'generating' | 'error';
 
@@ -26,12 +26,13 @@ const COMPARISON_SYSTEM_PROMPT = `You are a concise financial analyst. When give
 // System prompt for single portfolio analysis
 const SINGLE_SYSTEM_PROMPT = `You are a concise financial analyst. When given portfolio data, write a brief analysis in 2-3 sentences covering performance, risk characteristics, and any notable observations. Use the exact numbers provided. Do not give investment advice.`;
 
-const pct = (value: number) => formatPercent(value, 1);
+const pct = (value: number | null) => formatPercent(value, 1, 'n/a');
+const num = (value: number | null) => formatNumber(value, 2, 'n/a');
 
 function buildComparisonPrompt(portfolios: PortfolioStats[]): string {
   // Build clear data table
   const dataLines = portfolios.map(p =>
-    `- ${p.name}: Total Return ${pct(p.total_return)}, Annualized ${pct(p.annualized_return)}, Volatility ${pct(p.volatility)}, Sharpe ${p.sharpe_ratio.toFixed(2)}, Max Drawdown ${pct(p.max_drawdown)}`
+    `- ${p.name}: Total Return ${pct(p.total_return)}, Annualized ${pct(p.annualized_return)}, Volatility ${pct(p.volatility)}, Sharpe ${num(p.sharpe_ratio)}, Max Drawdown ${pct(p.max_drawdown)}`
   ).join('\n');
 
   return `Compare these ${portfolios.length} investment portfolios:
@@ -48,7 +49,7 @@ ${data.name}:
 - Total Return: ${pct(data.total_return)}
 - Annualized Return: ${pct(data.annualized_return)}
 - Volatility: ${pct(data.volatility)}
-- Sharpe Ratio: ${data.sharpe_ratio.toFixed(2)}
+- Sharpe Ratio: ${num(data.sharpe_ratio)}
 - Max Drawdown: ${pct(data.max_drawdown)}
 
 Write a 2-3 sentence analysis of this portfolio's performance and risk characteristics.`;

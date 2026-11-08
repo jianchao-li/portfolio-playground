@@ -27,9 +27,9 @@ The API client (`lib/api.ts`) handles all backend communication with `fetch()`, 
 
 **Backend** (`backend/`) -- FastAPI server running on Uvicorn with the following layers:
 - *Middleware* -- CORS support, gzip compression, and SlowAPI rate limiting
-- *Router* (`/api/portfolio`) -- `POST /analyze`, `POST /compare`, `GET /currencies`, `GET /symbols/search`
+- *Router* (`/api/portfolio`) -- `POST /analyze`, `POST /compare`, `GET /currencies` (mirrored by the frontend's bundled list), `GET /symbols/search`
 - *Services* -- `PortfolioAnalyzer` computes returns and metrics with pandas; `CurrencyService` handles FX conversions
-- *Cache* -- In-memory cache for prices, risk-free rates, and FX rates (5 min for ranges ending today, 6 h for past ranges)
+- *Cache* -- In-memory, per-symbol cache of full daily price histories (assets, the ^IRX T-bill series and FX pairs), sliced to each request's date range, so other ranges and symbol combinations only download symbols not seen yet. Data for ranges ending today is re-checked every 5 min (only the last few weeks are downloaded); if Yahoo has re-adjusted past prices (dividends, splits) the symbol's full history is downloaded again. Full histories are refreshed every 6 h; at most 64 symbols are kept (LRU).
 
 **External APIs** (Yahoo Finance) -- The backend fetches data via:
 - `yfinance` library -- Stock/ETF historical prices
@@ -43,9 +43,10 @@ The API client (`lib/api.ts`) handles all backend communication with `fetch()`, 
 
 ### Prerequisites
 
-- Python 3.10+
-- Node.js 18+
-- pnpm
+- Python 3.11+ for the backend (it uses `typing.Self`; CI runs 3.12)
+- Node.js 22.18+ for development and testing: `pnpm test:url` runs TypeScript directly (needs 22.18+), and the smoke tests' `puppeteer-core` needs 22.12+. The built frontend itself only needs Node.js 18.17+ (Next.js 14).
+- pnpm 9 (the lockfile is v9; CI uses 9.15.9)
+- Google Chrome, only for the browser smoke tests
 
 ### Setup
 
@@ -82,6 +83,44 @@ npm run dev
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000
+
+### Keeping the currency list in sync
+
+The supported currencies are bundled with the frontend (`frontend/src/lib/currencies.json`) so the page makes no request for them on load. The source of truth is `SUPPORTED_CURRENCIES` in `backend/app/services/currency.py`. After changing it, update the JSON and run:
+
+```bash
+cd frontend
+npm run check:currencies   # fails if the two lists differ (needs python3)
+```
+
+### Testing
+
+Everything runs offline: the backend tests mock Yahoo Finance, and the browser smoke tests use a mock backend. CI (`.github/workflows/ci.yml`) runs all of the following on every push to `master` and on pull requests. The frontend checks need Node.js 22.18+.
+
+```bash
+# Backend unit/API tests
+cd backend
+pip install -r requirements-dev.txt
+python -m pytest -q
+
+# Frontend static checks and unit tests
+cd frontend
+pnpm exec tsc --noEmit
+pnpm lint
+pnpm test:url            # shareable-URL state
+pnpm check:currencies    # bundled currency list matches the backend
+
+# Browser smoke tests (production build + mock backend on port 8765, ~10 s)
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8765 pnpm build
+pnpm test:smoke
+```
+
+The smoke tests (`frontend/scripts/smoke.mjs`) cover the analyze-vs-refresh race, rename and name collisions, editing a selected ticker, short date ranges, the empty state, and keyboard/ARIA basics. They drive your installed Google Chrome through `puppeteer-core` (no browser download); set `CHROME_PATH` if Chrome is elsewhere. Note that `pnpm build` overwrites `frontend/.next`, so stop `pnpm dev` first. Failure screenshots go to the system temp directory, or to `SMOKE_ARTIFACTS` if set.
+
+### Environment variables (frontend)
+
+- `NEXT_PUBLIC_API_URL` -- Backend base URL (default `http://localhost:8000`). Its origin also gets a `preconnect` hint.
+- `NEXT_PUBLIC_SITE_URL` -- Public site URL used for absolute Open Graph / Twitter image links (default `https://portfolio-playground-frontend.vercel.app`).
 
 ## Deployment
 

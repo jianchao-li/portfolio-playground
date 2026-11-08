@@ -1,0 +1,100 @@
+name: CI
+
+# Everything here runs offline: backend tests mock Yahoo Finance, the frontend
+# build points at a dead API port, and the browser smoke tests use a mock
+# backend (frontend/scripts/smoke-mock-backend.mjs).
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        run: python -m pytest -q
+
+  frontend:
+    name: Frontend checks, build and smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      # Nothing listens here during the build; the smoke tests later start
+      # their mock backend on this port.
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:8765
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit tests (scripts/*.test.mjs)
+        run: pnpm test:unit
+
+      - name: Currency list matches backend
+        run: pnpm check:currencies
+
+      - name: Build (backend unreachable)
+        run: pnpm build
+
+      - name: Browser smoke tests
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+          SMOKE_ARTIFACTS: ${{ runner.temp }}/smoke
+        run: |
+          mkdir -p "$SMOKE_ARTIFACTS"
+          pnpm test:smoke
+
+      - name: Upload smoke-test screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-failures
+          path: ${{ runner.temp }}/smoke
+          if-no-files-found: ignore
