@@ -1,5 +1,15 @@
 # Version History
 
+## 2026-11-20
+
+### SEO
+- **Landing Pages**: 13 indexable, server-rendered pages: 9 comparisons (`/compare/voo-vs-qqq`, `spy-vs-voo`, `voo-vs-gld`, …) and 4 classic allocations (`/portfolios/60-40`, `three-fund`, `all-weather`, `golden-butterfly`). Each page has its own title, description, canonical URL and social card, hand-written context, a summary sentence generated from the live statistics, and related links. Defined in `src/lib/landingPages.ts`
+- **Crawlability**: `robots.txt`, `sitemap.xml`, a canonical URL for every page (share links point to `/`), and `noindex` on Vercel preview deployments
+- **On-Page Content**: Keyword-bearing title, description and H1. A server-rendered guide covers how the backtest works, explains the statistics, and has an FAQ. Internal links point to the landing pages. The disclaimer, data source and "market data as of" date are now in the footer as visible text
+- **Structured Data**: JSON-LD for WebSite, WebApplication, Person and FAQPage on the home page, and WebPage plus BreadcrumbList on landing pages
+- **Social and Icons**: Per-page Open Graph images (`next/og`), shared Open Graph/Twitter defaults, an apple-touch icon, a web manifest, and titles for the chart SVGs
+- **Headers**: HSTS, `nosniff` and Referrer-Policy; no `X-Powered-By`
+
 ## 2026-11-08
 
 ### New Features

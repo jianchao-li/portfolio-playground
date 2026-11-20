@@ -12,6 +12,7 @@ A web application for analyzing and comparing investment portfolio performance. 
 - **Statistics table** -- Side-by-side comparison of Total Return, Annualized Return, Volatility, Sharpe Ratio, and Max Drawdown, with tooltips explaining each metric.
 - **Multi-currency support** -- View results in 40 currencies (USD, EUR, GBP, JPY, CNY, and more) using real-time exchange rates.
 - **Asset allocation view** -- Hover over any portfolio to see a pie chart breakdown of its holdings.
+- **Comparison pages** -- Indexable, server-rendered pages for popular comparisons (`/compare/voo-vs-qqq`) and classic allocations (`/portfolios/60-40`). Each has its own context text, social card and structured data. Add one by appending to `frontend/src/lib/landingPages.ts`; the sitemap and internal links pick it up.
 
 ## Architecture
 

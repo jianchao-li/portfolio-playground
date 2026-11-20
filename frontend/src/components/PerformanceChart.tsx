@@ -524,7 +524,13 @@ export default function PerformanceChart({
       ) : drawdown ? (
         <div className="chart-plot">
           <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: plotWidth, height: SSR_DIMENSION.height }} onResize={onResize}>
-            <AreaChart id="drawdown-chart" data={drawdown.rows} margin={CHART_MARGIN}>
+            <AreaChart
+              id="drawdown-chart"
+              data={drawdown.rows}
+              margin={CHART_MARGIN}
+              title="Drawdown chart"
+              desc="Percentage decline of each portfolio from its previous peak over time"
+            >
               <CartesianGrid vertical={false} stroke="#eceef1" />
               <XAxis
                 dataKey="t"
@@ -582,7 +588,13 @@ export default function PerformanceChart({
           <ResponsiveContainer width="100%" height="100%" initialDimension={SSR_DIMENSION} onResize={onResize}>
             {/* Fixed id: recharts' default clip-path id comes from a global counter,
                 which differs between the server and client renders */}
-            <LineChart id="performance-chart" data={chartRows} margin={CHART_MARGIN}>
+            <LineChart
+              id="performance-chart"
+              data={chartRows}
+              margin={CHART_MARGIN}
+              title="Portfolio growth chart"
+              desc="Value of each portfolio over time, starting from 100"
+            >
               <CartesianGrid vertical={false} stroke="#eceef1" />
               <XAxis
                 dataKey="t"

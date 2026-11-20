@@ -1,35 +1,38 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { API_BASE } from '@/lib/api';
+import {
+  AUTHOR, INDEXABLE, OG_IMAGE, OPEN_GRAPH_DEFAULTS, SITE_NAME, SITE_URL, TWITTER_DEFAULTS,
+} from '@/lib/site';
 
-const SITE_NAME = 'Portfolio Playground';
+// Search-facing copy: says what the tool does in the words people search with
+const HOME_TITLE = 'Free Portfolio Backtest & ETF Comparison Tool | Portfolio Playground';
 const DESCRIPTION =
-  'Build custom portfolios from real market data, compare historical returns, ' +
-  'volatility, Sharpe ratio and max drawdown, in 40 currencies.';
-// Absolute base for Open Graph / Twitter image URLs
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://portfolio-playground-frontend.vercel.app';
-const OG_IMAGE = {
-  url: '/og.jpg',
-  width: 1200,
-  height: 630,
-  alt: 'Portfolio Playground comparing S&P 500, developed and emerging markets',
-};
+  'Free portfolio backtester: compare ETFs like VOO, QQQ and gold side by side. ' +
+  'See historical growth, annualized return, volatility, Sharpe, Sortino and max ' +
+  'drawdown, with rebalancing, in 40 currencies.';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
+  title: { default: HOME_TITLE, template: `%s | ${SITE_NAME}` },
   description: DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [AUTHOR],
+  creator: AUTHOR.name,
+  // Share links (/?v=1&p=...) all serve the same HTML; pages override this
+  alternates: { canonical: '/' },
+  robots: INDEXABLE ? { index: true, follow: true } : { index: false, follow: false },
   openGraph: {
+    ...OPEN_GRAPH_DEFAULTS,
     type: 'website',
-    siteName: SITE_NAME,
-    title: SITE_NAME,
+    title: HOME_TITLE,
     description: DESCRIPTION,
     url: '/',
     images: [OG_IMAGE],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: SITE_NAME,
+    ...TWITTER_DEFAULTS,
+    title: HOME_TITLE,
     description: DESCRIPTION,
     images: [OG_IMAGE],
   },
