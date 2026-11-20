@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useRef, useEffect, useMemo, lazy, Suspense, type ReactNode } from 'react';
 import PortfolioBuilder from '@/components/PortfolioBuilder';
 import CurrencySelector from '@/components/CurrencySelector';
 import InsightsPanel from '@/components/InsightsPanel';
@@ -17,8 +17,10 @@ import {
   PortfolioInput, PortfolioResult, fetchComparison, toResult, todayISO,
 } from '@/lib/portfolios';
 import { getPortfolioColor } from '@/lib/colors';
+import { DISCLAIMER } from '@/lib/content';
+import { ABOUT_URL, AUTHOR, SOURCE_URL } from '@/lib/site';
 import { formatPercent } from '@/lib/formatting';
-import { UrlStateConfig, alignParam, parseUrlState, serializeUrlState } from '@/lib/urlState';
+import { URL_STATE_VERSION, UrlStateConfig, alignParam, parseUrlState, serializeUrlState } from '@/lib/urlState';
 import type { ExportInput } from '@/lib/csv';
 import { useWakeBackend } from '@/hooks/useWakeBackend';
 import { usePresetPrefetch } from '@/hooks/usePresetPrefetch';
@@ -41,12 +43,37 @@ const ChipSwatch = ({ color }: { color: string }) => (
   <span className="chip-swatch" style={{ background: color }} aria-hidden="true" />
 );
 
+/** The view a page starts on (the site defaults, or a landing page's). */
+export interface InitialView {
+  portfolios: PortfolioInput[];
+  startDate: string;
+  rebalance: Rebalance;
+}
+
+const DEFAULT_VIEW: InitialView = {
+  portfolios: DEFAULT_PORTFOLIOS,
+  startDate: DEFAULT_START_DATE,
+  rebalance: 'none',
+};
+
 interface PortfolioPlaygroundProps {
-  /** Default portfolios rendered on the server, or null if that fetch failed. */
+  /** The view's portfolios rendered on the server, or null if that fetch failed. */
   initialResults: PortfolioResult[] | null;
   /** End date the server used, so the client starts on the same range. */
   initialEndDate: string;
+  /** Start date the server-rendered results were aligned to, if any. */
+  initialAlignedStart?: string | null;
+  /** Starting view; the site defaults when omitted. */
+  view?: InitialView;
+  /** The page's H1 (a short, descriptive tagline under the brand). */
+  title?: string;
+  /** Link the brand to the home page (on pages other than the home page). */
+  linkBrand?: boolean;
+  /** Server-rendered content shown below the results (guides, FAQ, links). */
+  children?: ReactNode;
 }
+
+const HOME_TITLE = 'Free portfolio backtest: compare the returns and risk of ETFs and custom portfolios';
 
 // PerformanceChart takes a mutable array; copy once rather than every render
 const CHART_CURRENCIES = [...SUPPORTED_CURRENCIES];
@@ -83,6 +110,11 @@ function rangeStart(end: string, years: number | null): string {
   else d.setUTCFullYear(d.getUTCFullYear() - years);
   return d.toISOString().split('T')[0];
 }
+
+const formatLongDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+  });
 
 /** Turn transport-level errors into something a visitor can act on. */
 const friendlyError = (message: string) =>
@@ -151,7 +183,10 @@ function upsertResult(
   return rest;
 }
 
-export default function PortfolioPlayground({ initialResults, initialEndDate }: PortfolioPlaygroundProps) {
+export default function PortfolioPlayground({
+  initialResults, initialEndDate, initialAlignedStart = null, view = DEFAULT_VIEW,
+  title = HOME_TITLE, linkBrand = false, children,
+}: PortfolioPlaygroundProps) {
   const [results, setResults] = useState<PortfolioResult[]>(initialResults ?? []);
   // Single-portfolio analysis (preset click / modal submit) in flight
   const [analyzing, setAnalyzing] = useState(false);
@@ -164,7 +199,7 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
   const retryRef = useRef<(() => void) | null>(null);
   const [retryToken, setRetryToken] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState(DEFAULT_START_DATE);
+  const [startDate, setStartDate] = useState(view.startDate);
   const [endDate, setEndDate] = useState(initialEndDate);
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
   const [showModal, setShowModal] = useState(false);
@@ -179,25 +214,24 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
   const [alignMode, setAlignMode] = useState<boolean | undefined>(undefined);
   const align = alignMode ?? true;
   // Rebalancing schedule ('none' = buy-and-hold)
-  const [rebalance, setRebalance] = useState<Rebalance>('none');
+  const [rebalance, setRebalance] = useState<Rebalance>(view.rebalance);
   // Date the shown results were clipped to by the backend, or null
-  const [alignedStart, setAlignedStart] = useState<string | null>(null);
+  const [alignedStart, setAlignedStart] = useState<string | null>(initialAlignedStart);
   // Re-fetch everything on the next refresh even if the query is unchanged
   // (a portfolio added or removed changes the common start date)
   const forceRefreshRef = useRef(false);
   // Portfolios to load on the next refresh: the defaults (server prefetch
   // failed) or the portfolios from a shared link
   const seedRef = useRef<Seed | null>(initialResults === null
-    ? { inputs: DEFAULT_PORTFOLIOS, replaces: new Set(), fromUrl: false }
+    ? { inputs: view.portfolios, replaces: new Set(), fromUrl: false }
     : null);
   // Query (range + currency) a shared link asked for; refreshes wait for it
   const urlKeyRef = useRef<string | null>(null);
   // Don't overwrite the address bar while a shared link is loading (or after
   // it failed), until a load succeeds
   const urlSyncPausedRef = useRef(false);
-  // Query that `results` currently reflect. The server renders the defaults
-  // unaligned, which equals aligned: they all start on the same date.
-  const loadedKeyRef = useRef(queryKey(DEFAULT_START_DATE, initialEndDate, DEFAULT_CURRENCY, true, 'none'));
+  // Query that `results` currently reflect (the server renders them aligned)
+  const loadedKeyRef = useRef(queryKey(view.startDate, initialEndDate, DEFAULT_CURRENCY, true, view.rebalance));
   // Query currently selected (updated during render, so async callbacks can
   // tell whether their response is still for the current query)
   const currentKey = queryKey(startDate, endDate, currency, align, rebalance);
@@ -395,7 +429,7 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
     const key = queryKey(
       state.startDate, state.endDate, state.currency, state.alignStart ?? true, state.rebalance ?? 'none'
     );
-    if (inputs === DEFAULT_PORTFOLIOS && key === loadedKeyRef.current && !seedRef.current) return;
+    if (inputs === view.portfolios && key === loadedKeyRef.current && !seedRef.current) return;
 
     urlSyncPausedRef.current = true;
     seedRef.current = {
@@ -410,6 +444,8 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
     setAlignMode(state.alignStart);
     setRebalance(state.rebalance ?? 'none');
     setRefreshing(true);
+  // Mount only: the page's starting view never changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // (Re-)fetch all portfolios when the date range or currency changes, and
@@ -519,7 +555,7 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
     retry?.();
   };
 
-  /** Query string for the current view ("" for the default view). */
+  /** Query string for the current view ("" for the site's default view). */
   const currentQuery = () => serializeUrlState(
     {
       portfolios: resultsRef.current.map(({ name, assets }) => ({ name, assets })),
@@ -533,12 +569,36 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
     urlConfig(initialEndDate),
   );
 
+  // The page's own starting view, as a query (equal on the home page to "")
+  const initialQuery = useMemo(() => serializeUrlState(
+    {
+      portfolios: view.portfolios,
+      startDate: view.startDate,
+      endDate: initialEndDate,
+      currency: DEFAULT_CURRENCY,
+      rebalance: view.rebalance === 'none' ? undefined : view.rebalance,
+    },
+    DEFAULT_PORTFOLIOS,
+    urlConfig(initialEndDate),
+  ), [view, initialEndDate]);
+
+  /**
+   * Address-bar query for the current view: none while it is the page's own
+   * starting view (so landing pages keep clean URLs), otherwise the full view.
+   * "?v=1" is the site's default view on a page that starts elsewhere.
+   */
+  const addressQuery = () => {
+    const query = currentQuery();
+    if (query === initialQuery) return '';
+    return query || `?v=${URL_STATE_VERSION}`;
+  };
+
   // Mirror the view into the address bar (replaceState: no history entries)
   useEffect(() => {
     if (seedRef.current || urlSyncPausedRef.current) return;
     const id = setTimeout(() => {
       const { pathname, search, hash } = window.location;
-      const query = currentQuery();
+      const query = addressQuery();
       if (query !== search) {
         // Keep Next.js' own history state
         window.history.replaceState(window.history.state, '', `${pathname}${query}${hash}`);
@@ -548,7 +608,12 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, startDate, endDate, currency, alignMode, rebalance]);
 
-  const shareUrl = () => `${window.location.origin}${window.location.pathname}${currentQuery()}`;
+  // A landing page's own view shares its clean URL; anything else, a home link
+  const shareUrl = () => {
+    const { origin, pathname } = window.location;
+    const query = currentQuery();
+    return query === initialQuery ? `${origin}${pathname}` : `${origin}/${query}`;
+  };
 
   const applyRange = (years: number | null) => {
     const today = todayISO();
@@ -647,6 +712,8 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
     }
   };
   const firstLoad = loading && results.length === 0;
+  // Latest market data shown (for the footer's "as of" note)
+  const dataAsOf = results.reduce<string | null>((max, r) => (max && max > r.dataEnd ? max : r.dataEnd), null);
   const showEmpty = !loading && results.length === 0;
   // Shown results don't match the selected range/currency: loading, or the
   // refresh failed (an error with Retry is shown above)
@@ -658,9 +725,11 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
         {/* Row 1: Title left + Controls right */}
         <div className="top-card-row1">
           <div className="top-card-title">
-            <h1>Portfolio Playground</h1>
+            {linkBrand
+              ? <a className="brand" href="/">Portfolio Playground</a>
+              : <p className="brand">Portfolio Playground</p>}
             <div className="header-subtitle">
-              <span>Build, analyze, and compare investment portfolios</span>
+              <h1 className="header-tagline">{title}</h1>
               <a className="header-link header-link-about" href="https://jianchao.xyz/projects/portfolio-playground/" target="_blank" rel="noopener noreferrer">About</a>
               <a className="header-link header-link-source" href="https://github.com/jianchao-li/portfolio-playground" target="_blank" rel="noopener noreferrer">Source Code</a>
               <InfoTip
@@ -672,7 +741,7 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
               >
                 <span className="disclaimer-tooltip-content">
                   <strong>Disclaimer</strong>
-                  <span>For informational and educational purposes only — not financial advice. The author is not a financial advisor, and use of this tool does not create an advisory relationship. Data may be inaccurate, delayed, or incomplete. The author assumes no liability for any losses or damages arising from reliance on information provided. Consult a qualified financial professional before making investment decisions.</span>
+                  <span>{DISCLAIMER}</span>
                 </span>
               </InfoTip>
             </div>
@@ -1005,8 +1074,19 @@ export default function PortfolioPlayground({ initialResults, initialEndDate }: 
         </div>
       )}
 
-      <footer className="copyright">
-        © 2026 Jianchao Li
+      {children}
+
+      <footer className="copyright site-footer">
+        <p>
+          Educational tool, not financial advice. Past performance does not guarantee future results.
+          Prices from Yahoo Finance (adjusted closes, dividends reinvested)
+          {dataAsOf && <>; market data as of <time dateTime={dataAsOf}>{formatLongDate(dataAsOf)}</time></>}.
+        </p>
+        <p>
+          © 2026 <a href={AUTHOR.url} rel="author">{AUTHOR.name}</a>
+          {' · '}<a href={ABOUT_URL}>About</a>
+          {' · '}<a href={SOURCE_URL}>Source code</a>
+        </p>
       </footer>
     </main>
   );

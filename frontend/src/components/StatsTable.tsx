@@ -4,6 +4,7 @@ import InfoTip from './InfoTip';
 import { PortfolioStats } from '@/lib/api';
 import { getPortfolioColor } from '@/lib/colors';
 import { formatNumber, formatPercent } from '@/lib/formatting';
+import { METRIC_DEFINITIONS } from '@/lib/content';
 
 /** CSS sign class for a return; neutral (empty) when the value is missing. */
 const signClass = (value: number | null) =>
@@ -21,14 +22,6 @@ const formatSignedPercent = (value: number | null) => {
   return value > 0 ? `+${text}` : text.replace(/^-/, '\u2212');
 };
 
-const METRIC_DEFINITIONS: Record<string, string> = {
-  'Total Return': 'The overall gain or loss of an investment over the selected period, including capital appreciation and dividends, expressed as a percentage.',
-  'Annualized Return': 'The geometric average yearly return. It shows what annual return would produce the same total return if compounded each year.',
-  'Volatility': 'A measure of risk based on the standard deviation of returns. Higher volatility means larger price swings and greater uncertainty.',
-  'Sharpe Ratio': 'Risk-adjusted return: (portfolio return − risk-free rate) ÷ volatility. Uses 3-month T-bill rate as risk-free rate. Falls back to 5% annual rate if T-bill data is unavailable. Higher is better.',
-  'Sortino Ratio': 'Like the Sharpe ratio, but only downside moves count as risk: (portfolio return − risk-free rate) ÷ downside deviation, which uses only returns below the risk-free rate. Higher is better.',
-  'Max Drawdown': 'The largest peak-to-trough decline during the period. It shows the worst-case loss an investor could have experienced.',
-};
 
 const ANNUALIZED_NA_TITLE = 'Shown for date ranges of about one year or longer';
 const SORTINO_NA_TITLE = 'Not defined: no daily returns fell below the risk-free rate';
